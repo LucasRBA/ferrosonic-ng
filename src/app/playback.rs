@@ -1,4 +1,5 @@
 use crate::app::notifications::TrackInfo;
+use crate::subsonic::models::InternetRadioStation;
 use tracing::{debug, error, info, warn};
 
 use super::*;
@@ -83,6 +84,9 @@ impl App {
                             state.queue_position = Some(next_pos);
                             if let Some(song) = state.queue.get(next_pos).cloned() {
                                 state.now_playing.song = Some(song.clone());
+                                state.now_playing.radio_station = None;
+                                state.now_playing.radio_title = None;
+                                state.now_playing.radio_artist = None;
                                 state.now_playing.position = 0.0;
                                 state.now_playing.duration = song.duration.unwrap_or(0) as f64;
                                 state.now_playing.scrobbled = false;
@@ -108,6 +112,18 @@ impl App {
             // Check if MPV went idle (track ended, no preloaded track)
             if let Ok(idle) = self.mpv.is_idle() {
                 if idle {
+                    let is_radio = {
+                        let state = self.state.read().await;
+                        state.now_playing.radio_station.is_some()
+                    };
+                    if is_radio {
+                        info!("Radio stream went idle, stopping playback");
+                        let mut state = self.state.write().await;
+                        state.now_playing.state = PlaybackState::Stopped;
+                        state.now_playing.position = 0.0;
+                        return;
+                    }
+
                     info!("Track ended, advancing to next");
                     let _ = self.next_track().await;
                     return;
@@ -125,13 +141,14 @@ impl App {
         {
             let (should_check, position, duration, song_id) = {
                 let state = self.state.read().await;
+                let song_id = state.now_playing.song.as_ref().map(|s| s.id.clone());
                 let should_check = state.settings_state.scrobble_enabled
                     && !state.now_playing.scrobbled
                     && state.now_playing.state == PlaybackState::Playing
-                    && state.now_playing.duration > 0.0;
+                    && state.now_playing.duration > 0.0
+                    && song_id.is_some();
                 let position = state.now_playing.position;
                 let duration = state.now_playing.duration;
-                let song_id = state.now_playing.song.as_ref().map(|s| s.id.clone());
                 (should_check, position, duration, song_id)
             };
 
@@ -381,6 +398,9 @@ impl App {
             let mut state = self.state.write().await;
             state.queue_position = Some(pos);
             state.now_playing.song = Some(song.clone());
+            state.now_playing.radio_station = None;
+            state.now_playing.radio_title = None;
+            state.now_playing.radio_artist = None;
             state.now_playing.state = PlaybackState::Playing;
             state.now_playing.position = 0.0;
             state.now_playing.duration = song.duration.unwrap_or(0) as f64;
@@ -403,6 +423,45 @@ impl App {
         }
 
         self.preload_next_track(pos).await;
+
+        Ok(())
+    }
+
+    /// Play an internet radio station by direct stream URL
+    pub(super) async fn play_radio_station(
+        &mut self,
+        station: InternetRadioStation,
+    ) -> Result<(), Error> {
+        {
+            let mut state = self.state.write().await;
+            state.queue.clear();
+            state.queue_position = None;
+            state.queue_state.selected = None;
+            state.now_playing.song = None;
+            state.now_playing.radio_station = Some(station.clone());
+            state.now_playing.radio_title = None;
+            state.now_playing.radio_artist = None;
+            state.now_playing.state = PlaybackState::Playing;
+            state.now_playing.position = 0.0;
+            state.now_playing.duration = 0.0;
+            state.now_playing.sample_rate = None;
+            state.now_playing.bit_depth = None;
+            state.now_playing.format = None;
+            state.now_playing.channels = None;
+            state.now_playing.scrobbled = false;
+            state.notify(format!("Playing radio: {}", station.name));
+        }
+
+        info!("Playing radio: {}", station.name);
+        if self.mpv.is_paused().unwrap_or(false) {
+            let _ = self.mpv.resume();
+        }
+        if let Err(e) = self.mpv.loadfile(&station.stream_url) {
+            error!("Failed to play radio: {}", e);
+            let mut state = self.state.write().await;
+            state.now_playing.state = PlaybackState::Stopped;
+            state.notify_error(format!("MPV error: {}", e));
+        }
 
         Ok(())
     }
@@ -450,6 +509,9 @@ impl App {
         let mut state = self.state.write().await;
         state.now_playing.state = PlaybackState::Stopped;
         state.now_playing.song = None;
+        state.now_playing.radio_station = None;
+        state.now_playing.radio_title = None;
+        state.now_playing.radio_artist = None;
         state.now_playing.position = 0.0;
         state.now_playing.duration = 0.0;
         state.now_playing.sample_rate = None;

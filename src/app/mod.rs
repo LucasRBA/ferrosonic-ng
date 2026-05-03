@@ -7,6 +7,7 @@ mod input_artists;
 mod input_browse;
 mod input_playlists;
 mod input_queue;
+mod input_radio;
 mod input_server;
 mod input_settings;
 pub mod models;

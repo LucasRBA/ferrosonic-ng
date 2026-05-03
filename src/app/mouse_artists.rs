@@ -162,6 +162,9 @@ impl App {
                     state.queue.extend(songs);
                     state.queue_position = Some(item_index);
                     state.now_playing.song = Some(song.clone());
+                    state.now_playing.radio_station = None;
+                    state.now_playing.radio_title = None;
+                    state.now_playing.radio_artist = None;
                     state.now_playing.state = PlaybackState::Playing;
                     state.now_playing.position = 0.0;
                     state.now_playing.duration = song.duration.unwrap_or(0) as f64;
