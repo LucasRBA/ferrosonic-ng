@@ -23,7 +23,7 @@ impl App {
             let is_second_click = was_selected
                 && self
                     .last_click
-                    .is_some_and(|(lx, ly, t)| lx == x && ly == y && t.elapsed().as_millis() < 500);
+                    .is_some_and(|(_, ly, t)| ly == y && t.elapsed().as_millis() < 500);
 
             if is_second_click {
                 let station = state.radio.stations[item_index].clone();

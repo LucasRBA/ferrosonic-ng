@@ -51,6 +51,9 @@ impl App {
                     }
                     return self.play_radio_station(station).await;
                 }
+
+                drop(state);
+                return self.toggle_pause().await;
             }
             _ => {}
         }

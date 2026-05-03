@@ -125,6 +125,14 @@ impl App {
                         state.now_playing.radio_artist = None;
                         state.now_playing.position = 0.0;
                         state.now_playing.duration = 0.0;
+                        drop(state);
+
+                        if let Some(ref server) = self.mpris_server {
+                            if let Err(e) = update_mpris_properties(server, &self.state).await {
+                                debug!("Failed to update MPRIS properties: {}", e);
+                            }
+                        }
+
                         return;
                     }
 

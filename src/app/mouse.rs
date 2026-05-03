@@ -26,6 +26,7 @@ impl App {
         let layout = state.layout.clone();
         let page = state.page;
         let duration = state.now_playing.duration;
+        let radio_active = state.now_playing.radio_station.is_some();
         drop(state);
 
         // Check header area
@@ -80,7 +81,7 @@ impl App {
         // Check now playing area (progress bar seeking)
         if y >= layout.now_playing.y && y < layout.now_playing.y + layout.now_playing.height {
             let inner_bottom = layout.now_playing.y + layout.now_playing.height - 2;
-            if y == inner_bottom && duration > 0.0 {
+            if y == inner_bottom && duration > 0.0 && !radio_active {
                 let inner_x_start = layout.now_playing.x + 1;
                 let inner_width = layout.now_playing.width.saturating_sub(2);
                 if inner_width > 15 && x >= inner_x_start {
