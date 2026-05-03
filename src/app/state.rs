@@ -8,7 +8,7 @@ use ratatui::layout::Rect;
 
 use crate::app::models::{BrowseTab, SongOption};
 use crate::config::Config;
-use crate::subsonic::models::{Album, Artist, Child, Playlist};
+use crate::subsonic::models::{Album, Artist, Child, InternetRadioStation, Playlist};
 use crate::ui::theme::{ThemeColors, ThemeData};
 
 /// Current page in the application
@@ -19,6 +19,7 @@ pub enum Page {
     Artists,
     Queue,
     Playlists,
+    Radio,
     Server,
     Settings,
 }
@@ -30,8 +31,9 @@ impl Page {
             Page::Artists => 1,
             Page::Queue => 2,
             Page::Playlists => 3,
-            Page::Server => 4,
-            Page::Settings => 5,
+            Page::Radio => 4,
+            Page::Server => 5,
+            Page::Settings => 6,
         }
     }
 
@@ -41,6 +43,7 @@ impl Page {
             Page::Artists => "Artists",
             Page::Queue => "Queue",
             Page::Playlists => "Playlists",
+            Page::Radio => "Radio",
             Page::Server => "Server",
             Page::Settings => "Settings",
         }
@@ -52,8 +55,9 @@ impl Page {
             Page::Artists => "F2",
             Page::Queue => "F3",
             Page::Playlists => "F4",
-            Page::Server => "F5",
-            Page::Settings => "F6",
+            Page::Radio => "F5",
+            Page::Server => "F6",
+            Page::Settings => "F7",
         }
     }
 }
@@ -72,6 +76,12 @@ pub enum PlaybackState {
 pub struct NowPlaying {
     /// Currently playing song
     pub song: Option<Child>,
+    /// Currently playing internet radio station
+    pub radio_station: Option<InternetRadioStation>,
+    /// Current radio stream title from player metadata
+    pub radio_title: Option<String>,
+    /// Current radio stream artist from player metadata
+    pub radio_artist: Option<String>,
     /// Playback state
     pub state: PlaybackState,
     /// Current position in seconds
@@ -290,6 +300,17 @@ pub struct PlaylistsState {
     pub song_scroll_offset: usize,
 }
 
+/// Radio page state
+#[derive(Debug, Clone, Default)]
+pub struct RadioState {
+    /// List of all internet radio stations
+    pub stations: Vec<InternetRadioStation>,
+    /// Currently selected station index
+    pub selected: Option<usize>,
+    /// Scroll offset for the station list (set after render)
+    pub scroll_offset: usize,
+}
+
 /// Server page state (connection settings)
 #[derive(Debug, Clone, Default)]
 pub struct ServerState {
@@ -420,6 +441,8 @@ pub struct AppState {
     pub queue_state: QueueState,
     /// Playlists page state
     pub playlists: PlaylistsState,
+    /// Radio page state
+    pub radio: RadioState,
     /// Server page state (connection settings)
     pub server_state: ServerState,
     /// Settings page state (app preferences)

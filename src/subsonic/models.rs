@@ -247,6 +247,32 @@ pub struct PlaylistDetail {
     pub entry: Vec<Child>,
 }
 
+/// Internet radio stations response
+#[derive(Debug, Deserialize)]
+pub struct InternetRadioStationsData {
+    #[serde(rename = "internetRadioStations")]
+    pub internet_radio_stations: InternetRadioStationsInner,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct InternetRadioStationsInner {
+    #[serde(rename = "internetRadioStation", default)]
+    pub internet_radio_station: Vec<InternetRadioStation>,
+}
+
+/// Internet radio station
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InternetRadioStation {
+    pub id: String,
+    pub name: String,
+    #[serde(rename = "streamUrl")]
+    pub stream_url: String,
+    #[serde(default, rename = "homePageUrl")]
+    pub home_page_url: Option<String>,
+    #[serde(default, rename = "coverArt")]
+    pub cover_art: Option<String>,
+}
+
 /// Search3 response wrapper
 #[derive(Debug, Deserialize)]
 pub struct Search3Data {

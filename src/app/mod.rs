@@ -234,6 +234,7 @@ impl App {
         self.get_all_songs(false).await;
         self.get_artists().await;
         self.get_playlists().await;
+        self.get_radio_stations().await;
     }
 
     /// Main event loop

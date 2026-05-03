@@ -90,6 +90,13 @@ impl<'a> Footer<'a> {
                     ("s", "Shuffle play"),
                 ]);
             }
+            Page::Radio => {
+                binds.extend([
+                    ("Enter", "Play"),
+                    ("Space", "Play/Pause"),
+                    ("Ctrl+R", "Refresh"),
+                ]);
+            }
             Page::Server => {
                 binds.extend([
                     ("Tab", "Next field"),

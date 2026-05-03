@@ -43,6 +43,7 @@ impl Widget for Header {
             Page::Artists,
             Page::Queue,
             Page::Playlists,
+            Page::Radio,
             Page::Server,
             Page::Settings,
         ]
@@ -120,6 +121,7 @@ impl Header {
                 Page::Artists,
                 Page::Queue,
                 Page::Playlists,
+                Page::Radio,
                 Page::Server,
                 Page::Settings,
             ];
