@@ -137,6 +137,26 @@ impl App {
             state.now_playing.position = position;
         }
 
+        // Update live metadata for radio streams.
+        {
+            let is_radio = {
+                let state = self.state.read().await;
+                state.now_playing.radio_station.is_some()
+            };
+
+            if is_radio {
+                if let Ok(metadata) = self.mpv.get_radio_metadata() {
+                    let mut state = self.state.write().await;
+                    if state.now_playing.radio_title != metadata.title {
+                        state.now_playing.radio_title = metadata.title;
+                    }
+                    if state.now_playing.radio_artist != metadata.artist {
+                        state.now_playing.radio_artist = metadata.artist;
+                    }
+                }
+            }
+        }
+
         // Check scrobble threshold: 50% of duration or 4 minutes, whichever comes first
         {
             let (should_check, position, duration, song_id) = {

@@ -40,6 +40,90 @@ fn build_cover_art_url(config: &Config, cover_art_id: &str) -> Option<String> {
     Some(url.to_string())
 }
 
+fn mpris_path_segment(value: &str) -> String {
+    value
+        .chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '_' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect()
+}
+
+fn build_metadata(
+    now_playing: &NowPlaying,
+    current_song: Option<Child>,
+    config: &Config,
+) -> Metadata {
+    let mut metadata = Metadata::new();
+
+    if let Some(song) = current_song {
+        metadata.set_trackid(
+            Some(TrackId::try_from(format!("/org/mpris/MediaPlayer2/Track/{}", song.id)).ok())
+                .flatten(),
+        );
+        metadata.set_title(Some(song.title));
+        metadata.set_artist(song.artist.map(|a| vec![a]));
+        metadata.set_album(song.album);
+
+        if let Some(duration) = song.duration {
+            metadata.set_length(Some(Time::from_micros(duration as i64 * 1_000_000)));
+        }
+
+        if let Some(track) = song.track {
+            metadata.set_track_number(Some(track));
+        }
+
+        if let Some(disc) = song.disc_number {
+            metadata.set_disc_number(Some(disc));
+        }
+
+        if let Some(ref cover_art_id) = song.cover_art {
+            if let Some(cover_url) = build_cover_art_url(config, cover_art_id) {
+                metadata.set_art_url(Some(cover_url));
+            }
+        }
+    } else if let Some(station) = now_playing.radio_station.as_ref() {
+        metadata.set_trackid(
+            Some(
+                TrackId::try_from(format!(
+                    "/org/mpris/MediaPlayer2/Radio/{}",
+                    mpris_path_segment(&station.id)
+                ))
+                .ok(),
+            )
+            .flatten(),
+        );
+        metadata.set_title(Some(
+            now_playing
+                .radio_title
+                .clone()
+                .unwrap_or_else(|| station.name.clone()),
+        ));
+        metadata.set_artist(Some(vec![now_playing
+            .radio_artist
+            .clone()
+            .unwrap_or_else(|| "Internet Radio".to_string())]));
+        metadata.set_album(
+            station
+                .home_page_url
+                .clone()
+                .or_else(|| Some(station.name.clone())),
+        );
+
+        if let Some(ref cover_art_id) = station.cover_art {
+            if let Some(cover_url) = build_cover_art_url(config, cover_art_id) {
+                metadata.set_art_url(Some(cover_url));
+            }
+        }
+    }
+
+    metadata
+}
+
 /// MPRIS server instance name
 const PLAYER_NAME: &str = "ferrosonic";
 
@@ -207,40 +291,8 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn metadata(&self) -> fdo::Result<Metadata> {
-        let (_now_playing, current_song, config) = self.get_state().await;
-
-        let mut metadata = Metadata::new();
-
-        if let Some(song) = current_song {
-            metadata.set_trackid(
-                Some(TrackId::try_from(format!("/org/mpris/MediaPlayer2/Track/{}", song.id)).ok())
-                    .flatten(),
-            );
-            metadata.set_title(Some(song.title));
-            metadata.set_artist(song.artist.map(|a| vec![a]));
-            metadata.set_album(song.album);
-
-            if let Some(duration) = song.duration {
-                metadata.set_length(Some(Time::from_micros(duration as i64 * 1_000_000)));
-            }
-
-            if let Some(track) = song.track {
-                metadata.set_track_number(Some(track));
-            }
-
-            if let Some(disc) = song.disc_number {
-                metadata.set_disc_number(Some(disc));
-            }
-
-            // Add cover art URL
-            if let Some(ref cover_art_id) = song.cover_art {
-                if let Some(cover_url) = build_cover_art_url(&config, cover_art_id) {
-                    metadata.set_art_url(Some(cover_url));
-                }
-            }
-        }
-
-        Ok(metadata)
+        let (now_playing, current_song, config) = self.get_state().await;
+        Ok(build_metadata(&now_playing, current_song, &config))
     }
 
     async fn volume(&self) -> fdo::Result<Volume> {
@@ -283,7 +335,7 @@ impl PlayerInterface for MprisPlayer {
 
     async fn can_play(&self) -> fdo::Result<bool> {
         let state = self.state.read().await;
-        Ok(!state.queue.is_empty())
+        Ok(!state.queue.is_empty() || state.now_playing.radio_station.is_some())
     }
 
     async fn can_pause(&self) -> fdo::Result<bool> {
@@ -291,7 +343,8 @@ impl PlayerInterface for MprisPlayer {
     }
 
     async fn can_seek(&self) -> fdo::Result<bool> {
-        Ok(true)
+        let state = self.state.read().await;
+        Ok(state.now_playing.radio_station.is_none())
     }
 
     async fn can_control(&self) -> fdo::Result<bool> {
@@ -338,31 +391,18 @@ pub async fn update_mpris_properties(
                     .unwrap_or(false),
             ),
             Property::CanGoPrevious(state.queue_position.map(|p| p > 0).unwrap_or(false)),
+            Property::CanPlay(!state.queue.is_empty() || state.now_playing.radio_station.is_some()),
+            Property::CanSeek(state.now_playing.radio_station.is_none()),
         ])
         .await?;
 
-    // Update metadata if we have a current song
-    if let Some(song) = state.current_song() {
-        let mut metadata = Metadata::new();
-        metadata.set_trackid(
-            Some(TrackId::try_from(format!("/org/mpris/MediaPlayer2/Track/{}", song.id)).ok())
-                .flatten(),
+    // Update metadata if we have a current song or radio station
+    if state.current_song().is_some() || state.now_playing.radio_station.is_some() {
+        let metadata = build_metadata(
+            &state.now_playing,
+            state.current_song().cloned(),
+            &state.config,
         );
-        metadata.set_title(Some(song.title.clone()));
-        metadata.set_artist(song.artist.clone().map(|a| vec![a]));
-        metadata.set_album(song.album.clone());
-
-        if let Some(duration) = song.duration {
-            metadata.set_length(Some(Time::from_micros(duration as i64 * 1_000_000)));
-        }
-
-        // Add cover art URL
-        if let Some(ref cover_art_id) = song.cover_art {
-            if let Some(cover_url) = build_cover_art_url(&state.config, cover_art_id) {
-                metadata.set_art_url(Some(cover_url));
-            }
-        }
-
         server
             .properties_changed([Property::Metadata(metadata)])
             .await?;
@@ -382,7 +422,10 @@ mod tests {
         let player = MprisPlayer::new(new_shared_state(Config::new()), audio_tx);
 
         assert_eq!(
-            player.identity().await.expect("identity should be available"),
+            player
+                .identity()
+                .await
+                .expect("identity should be available"),
             "Ferrosonic"
         );
     }

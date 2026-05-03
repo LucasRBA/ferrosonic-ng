@@ -58,11 +58,118 @@ impl Widget for NowPlayingWidget<'_> {
         }
 
         // Check if something is playing
-        if self.now_playing.song.is_none() {
+        if self.now_playing.song.is_none() && self.now_playing.radio_station.is_none() {
             let no_track = Paragraph::new("No track playing")
                 .style(Style::default().fg(self.colors.muted))
                 .alignment(Alignment::Center);
             no_track.render(inner, buf);
+            return;
+        }
+
+        if let Some(station) = self.now_playing.radio_station.as_ref() {
+            let title = self
+                .now_playing
+                .radio_title
+                .as_deref()
+                .unwrap_or(&station.name);
+            let artist = self
+                .now_playing
+                .radio_artist
+                .as_deref()
+                .unwrap_or("Internet Radio");
+            let subtitle = station.home_page_url.as_deref().unwrap_or(&station.name);
+            let quality = build_quality_string(self.now_playing);
+
+            if inner.height >= 5 {
+                let chunks = Layout::vertical([
+                    Constraint::Length(1), // Artist
+                    Constraint::Length(1), // Station/subtitle
+                    Constraint::Length(1), // Title
+                    Constraint::Length(1), // Quality
+                    Constraint::Length(1), // Elapsed
+                ])
+                .split(inner);
+
+                Paragraph::new(Line::from(vec![Span::styled(
+                    artist,
+                    Style::default().fg(self.colors.artist),
+                )]))
+                .alignment(Alignment::Center)
+                .render(chunks[0], buf);
+
+                Paragraph::new(Line::from(vec![Span::styled(
+                    subtitle,
+                    Style::default().fg(self.colors.album),
+                )]))
+                .alignment(Alignment::Center)
+                .render(chunks[1], buf);
+
+                Paragraph::new(Line::from(vec![Span::styled(
+                    title,
+                    Style::default()
+                        .fg(self.colors.highlight_fg)
+                        .add_modifier(Modifier::BOLD),
+                )]))
+                .alignment(Alignment::Center)
+                .render(chunks[2], buf);
+
+                if !quality.is_empty() {
+                    Paragraph::new(Line::from(vec![Span::styled(
+                        quality,
+                        Style::default().fg(self.colors.muted),
+                    )]))
+                    .alignment(Alignment::Center)
+                    .render(chunks[3], buf);
+                }
+
+                render_elapsed(chunks[4], buf, self.now_playing, &self.colors);
+            } else if inner.height >= 3 {
+                let chunks = Layout::vertical([
+                    Constraint::Length(1), // Title - Artist
+                    Constraint::Length(1), // Station / Quality
+                    Constraint::Length(1), // Elapsed
+                ])
+                .split(inner);
+
+                let line1 = Line::from(vec![
+                    Span::styled(
+                        title,
+                        Style::default()
+                            .fg(self.colors.highlight_fg)
+                            .add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(" - ", Style::default().fg(self.colors.muted)),
+                    Span::styled(artist, Style::default().fg(self.colors.artist)),
+                ]);
+                Paragraph::new(line1)
+                    .alignment(Alignment::Center)
+                    .render(chunks[0], buf);
+
+                let line2_text = if quality.is_empty() {
+                    subtitle
+                } else {
+                    &quality
+                };
+                Paragraph::new(Line::from(vec![Span::styled(
+                    line2_text,
+                    Style::default().fg(self.colors.album),
+                )]))
+                .alignment(Alignment::Center)
+                .render(chunks[1], buf);
+
+                render_elapsed(chunks[2], buf, self.now_playing, &self.colors);
+            } else {
+                let chunks =
+                    Layout::vertical([Constraint::Length(1), Constraint::Length(1)]).split(inner);
+                Paragraph::new(Line::from(vec![Span::styled(
+                    title,
+                    Style::default().fg(self.colors.highlight_fg),
+                )]))
+                .alignment(Alignment::Center)
+                .render(chunks[0], buf);
+                render_elapsed(chunks[1], buf, self.now_playing, &self.colors);
+            }
+
             return;
         }
 
@@ -80,25 +187,7 @@ impl Widget for NowPlayingWidget<'_> {
         let title = song.title.clone();
 
         // Build quality string
-        let mut quality_parts = Vec::new();
-        if let Some(ref fmt) = self.now_playing.format {
-            quality_parts.push(fmt.to_string().to_uppercase());
-        }
-        if let Some(bits) = self.now_playing.bit_depth {
-            quality_parts.push(format!("{}-bit", bits));
-        }
-        if let Some(rate) = self.now_playing.sample_rate {
-            let khz = rate as f64 / 1000.0;
-            if khz == khz.floor() {
-                quality_parts.push(format!("{}kHz", khz as u32));
-            } else {
-                quality_parts.push(format!("{:.1}kHz", khz));
-            }
-        }
-        if let Some(ref channels) = self.now_playing.channels {
-            quality_parts.push(channels.to_string());
-        }
-        let quality = quality_parts.join(" │ ");
+        let quality = build_quality_string(self.now_playing);
 
         // Layout based on available height
         if inner.height >= 5 {
@@ -229,6 +318,39 @@ impl Widget for NowPlayingWidget<'_> {
             );
         }
     }
+}
+
+fn build_quality_string(now_playing: &NowPlaying) -> String {
+    let mut quality_parts = Vec::new();
+    if let Some(ref fmt) = now_playing.format {
+        quality_parts.push(fmt.to_string().to_uppercase());
+    }
+    if let Some(bits) = now_playing.bit_depth {
+        quality_parts.push(format!("{}-bit", bits));
+    }
+    if let Some(rate) = now_playing.sample_rate {
+        let khz = rate as f64 / 1000.0;
+        if khz == khz.floor() {
+            quality_parts.push(format!("{}kHz", khz as u32));
+        } else {
+            quality_parts.push(format!("{:.1}kHz", khz));
+        }
+    }
+    if let Some(ref channels) = now_playing.channels {
+        quality_parts.push(channels.to_string());
+    }
+    quality_parts.join(" │ ")
+}
+
+fn render_elapsed(area: Rect, buf: &mut Buffer, now_playing: &NowPlaying, colors: &ThemeColors) {
+    if area.width < 5 {
+        return;
+    }
+
+    let elapsed = now_playing.format_position();
+    let text = format!("Live │ {}", elapsed);
+    let start_x = area.x + (area.width.saturating_sub(text.len() as u16)) / 2;
+    buf.set_string(start_x, area.y, text, Style::default().fg(colors.muted));
 }
 
 /// Render a simple progress bar
