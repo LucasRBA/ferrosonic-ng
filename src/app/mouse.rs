@@ -123,6 +123,7 @@ impl App {
             Page::Artists => self.handle_artists_click(x, y, layout).await,
             Page::Queue => self.handle_queue_click(y, layout).await,
             Page::Playlists => self.handle_playlists_click(x, y, layout).await,
+            Page::Radio => self.handle_radio_click(x, y, layout).await,
             _ => Ok(()),
         }
     }
@@ -213,6 +214,20 @@ impl App {
                     if sel > 0 {
                         state.playlists.selected_song = Some(sel - 1);
                     }
+                }
+            }
+            Page::Radio => {
+                if let Some(sel) = state.radio.selected {
+                    if sel > 0 {
+                        let new_sel = sel - 1;
+                        state.radio.selected = Some(new_sel);
+                        if new_sel < state.radio.scroll_offset {
+                            state.radio.scroll_offset = new_sel;
+                        }
+                    }
+                } else if !state.radio.stations.is_empty() {
+                    state.radio.selected = Some(0);
+                    state.radio.scroll_offset = 0;
                 }
             }
             _ => {}
@@ -337,6 +352,22 @@ impl App {
                     } else if !state.playlists.songs.is_empty() {
                         state.playlists.selected_song = Some(0);
                     }
+                }
+            }
+            Page::Radio => {
+                let max = state.radio.stations.len().saturating_sub(1);
+                if let Some(sel) = state.radio.selected {
+                    if sel < max {
+                        let new_sel = sel + 1;
+                        state.radio.selected = Some(new_sel);
+                        let viewport = state.layout.content.height.saturating_sub(2) as usize;
+                        if viewport > 0 && new_sel >= state.radio.scroll_offset + viewport {
+                            state.radio.scroll_offset = new_sel + 1 - viewport;
+                        }
+                    }
+                } else if !state.radio.stations.is_empty() {
+                    state.radio.selected = Some(0);
+                    state.radio.scroll_offset = 0;
                 }
             }
             _ => {}

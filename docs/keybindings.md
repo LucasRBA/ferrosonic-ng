@@ -16,8 +16,9 @@ Ferrosonic is fully keyboard-driven. Vim-style `j`/`k` navigation is available a
 | `F2` | Artists page |
 | `F3` | Queue page |
 | `F4` | Playlists page |
-| `F5` | Server configuration page |
-| `F6` | Settings page |
+| `F5` | Radio page |
+| `F6` | Server configuration page |
+| `F7` | Settings page |
 
 ## Songs Page (F1)
 
@@ -70,7 +71,19 @@ The Songs page has two modes selectable from the options pane: **Starred** (your
 | `n` | Add selected song as next in queue |
 | `s` | Shuffle play all songs in selected playlist |
 
-## Server Page (F5)
+## Radio Page (F5)
+
+| Key | Action |
+|---|---|
+| `Up` / `k` | Move selection up |
+| `Down` / `j` | Move selection down |
+| `Enter` | Play selected station |
+| `Space` | Play selected station, or toggle pause if it is already current |
+| `Ctrl+R` | Refresh all data, including radio stations |
+
+The Radio page lists internet radio stations from servers that support the Subsonic `getInternetRadioStations` endpoint, such as Navidrome.
+
+## Server Page (F6)
 
 | Key | Action |
 |---|---|
@@ -78,7 +91,7 @@ The Songs page has two modes selectable from the options pane: **Starred** (your
 | `Enter` | Test connection or Save configuration |
 | `Backspace` | Delete character in text field |
 
-## Settings Page (F6)
+## Settings Page (F7)
 
 | Key | Action |
 |---|---|

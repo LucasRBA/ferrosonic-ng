@@ -15,6 +15,7 @@ mod mouse;
 mod mouse_artists;
 mod mouse_browse;
 mod mouse_playlists;
+mod mouse_radio;
 mod notifications;
 mod playback;
 mod repo;

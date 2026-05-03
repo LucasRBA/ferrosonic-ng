@@ -120,7 +120,11 @@ impl App {
                         info!("Radio stream went idle, stopping playback");
                         let mut state = self.state.write().await;
                         state.now_playing.state = PlaybackState::Stopped;
+                        state.now_playing.radio_station = None;
+                        state.now_playing.radio_title = None;
+                        state.now_playing.radio_artist = None;
                         state.now_playing.position = 0.0;
+                        state.now_playing.duration = 0.0;
                         return;
                     }
 
@@ -480,6 +484,11 @@ impl App {
             error!("Failed to play radio: {}", e);
             let mut state = self.state.write().await;
             state.now_playing.state = PlaybackState::Stopped;
+            state.now_playing.radio_station = None;
+            state.now_playing.radio_title = None;
+            state.now_playing.radio_artist = None;
+            state.now_playing.position = 0.0;
+            state.now_playing.duration = 0.0;
             state.notify_error(format!("MPV error: {}", e));
         }
 
