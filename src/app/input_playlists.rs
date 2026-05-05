@@ -109,6 +109,7 @@ impl App {
                             state.queue.clear();
                             state.queue.extend(songs);
                             drop(state);
+                            self.save_queue_sync();
                             return self.play_queue_position(idx).await;
                         }
                     }
@@ -122,6 +123,8 @@ impl App {
                             let title = song.title.clone();
                             state.queue.push(song);
                             state.notify(format!("Added to queue: {}", title));
+                            drop(state);
+                            self.save_queue_sync();
                         }
                     }
                 } else {
@@ -131,6 +134,8 @@ impl App {
                         let songs = state.playlists.songs.clone();
                         state.queue.extend(songs);
                         state.notify(format!("Added {} songs to queue", count));
+                        drop(state);
+                        self.save_queue_sync();
                     }
                 }
             }
@@ -146,6 +151,7 @@ impl App {
 
                             let queue_position = state.queue_position;
                             drop(state);
+                            self.save_queue_sync();
 
                             if let Some(pos) = queue_position {
                                 let _ = self.mpv.playlist_remove(1); // remove stale preloaded track
@@ -164,6 +170,7 @@ impl App {
                     state.queue.clear();
                     state.queue.extend(songs);
                     drop(state);
+                    self.save_queue_sync();
                     return self.play_queue_position(0).await;
                 }
             }

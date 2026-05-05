@@ -16,6 +16,7 @@ Ferrosonic-ng is a continuation of the original [ferrosonic](https://github.com/
 - **Artist/album browser** — Tree-based navigation with expandable artists, album listings, and artist filtering
 - **Browse page** — Browse and search all, starred and random songs/albums from your server
 - **Playlists & queue management** — Browse server playlists, add/remove/reorder/shuffle queue, clear history
+- **Queue persistence** — Automatically save and restore your play queue and current position on launch
 - **Internet radio** — Browse and play Navidrome/Subsonic radio stations with live stream metadata when available
 - **Audio quality display** — Real-time sample rate, bit depth, codec, and channel layout
 - **Audio visualizer** — Integrated [cava](https://github.com/karlstav/cava) visualizer with theme-matched gradient colors
@@ -98,6 +99,7 @@ CavaSize = 40
 Notifications = true
 RandomSongsCount = 100
 Scrobble = true
+SaveQueue = true
 ```
 
 | Field | Type | Default | Description |
@@ -111,6 +113,7 @@ Scrobble = true
 | `Notifications` | `bool` | `false` | Enable desktop track-change notifications |
 | `RandomSongsCount` | `usize` | `250` | Number of random songs to fetch |
 | `Scrobble` | `bool` | `true` | Enable scrobbling (reporting played tracks to the server) |
+| `SaveQueue` | `bool` | `true` | Save and restore the play queue and current position on launch |
 
 Logs are written to `~/.config/ferrosonic/ferrosonic.log`.
 

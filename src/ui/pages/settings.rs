@@ -40,6 +40,8 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AppState) {
         Constraint::Length(2), // Notifications
         Constraint::Length(1), // Spacing
         Constraint::Length(2), // Scrobble toggle
+        Constraint::Length(1), // Spacing
+        Constraint::Length(2), // Save Queue toggle
         Constraint::Min(1),    // Remaining space
     ])
     .split(inner);
@@ -120,6 +122,22 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AppState) {
         &colors,
     );
 
+    // Save Queue toggle (field 5)
+    let save_queue_value = if settings.save_queue_enabled {
+        "On"
+    } else {
+        "Off"
+    };
+
+    render_option(
+        frame,
+        chunks[11],
+        "Save Queue",
+        save_queue_value,
+        settings.selected_field == 5,
+        &colors,
+    );
+
     // Help text at bottom
     let help_text = match settings.selected_field {
         0 => "← → or Enter to change theme (auto-saves)",
@@ -129,6 +147,7 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AppState) {
         2 => "cava is not installed on this system",
         3 => "← → or Enter to toggle desktop notifications",
         4 => "← → or Enter to toggle scrobbling played tracks to the server",
+        5 => "← → or Enter to toggle saving queue on exit and restoring on launch",
         _ => "",
     };
     let help = Paragraph::new(help_text).style(Style::default().fg(colors.muted));

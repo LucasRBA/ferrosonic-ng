@@ -482,7 +482,10 @@ impl App {
             state.now_playing.channels = None;
             state.now_playing.scrobbled = false;
             state.notify(format!("Playing radio: {}", station.name));
+            drop(state);
         }
+
+        self.save_queue().await;
 
         info!("Playing radio: {}", station.name);
         if self.mpv.is_paused().unwrap_or(false) {
@@ -557,6 +560,9 @@ impl App {
         state.now_playing.channels = None;
         state.queue.clear();
         state.queue_position = None;
+        drop(state);
+
+        self.save_queue().await;
         Ok(())
     }
 

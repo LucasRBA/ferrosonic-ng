@@ -21,7 +21,7 @@ impl App {
                     }
                 }
                 KeyCode::Down | KeyCode::Char('j') => {
-                    if field < 4 {
+                    if field < 5 {
                         state.settings_state.selected_field = field + 1;
                     }
                 }
@@ -79,6 +79,18 @@ impl App {
                         state.notify(format!("Scrobble: {}", status));
                         config_changed = true;
                     }
+                    5 => {
+                        state.settings_state.save_queue_enabled =
+                            !state.settings_state.save_queue_enabled;
+                        state.config.save_queue = state.settings_state.save_queue_enabled;
+                        let status = if state.settings_state.save_queue_enabled {
+                            "On"
+                        } else {
+                            "Off"
+                        };
+                        state.notify(format!("Save Queue: {}", status));
+                        config_changed = true;
+                    }
                     _ => {}
                 },
                 // Right / Enter / Space
@@ -134,6 +146,18 @@ impl App {
                                 "Off"
                             };
                             state.notify(format!("Scrobble: {}", status));
+                            config_changed = true;
+                        }
+                        5 => {
+                            state.settings_state.save_queue_enabled =
+                                !state.settings_state.save_queue_enabled;
+                            state.config.save_queue = state.settings_state.save_queue_enabled;
+                            let status = if state.settings_state.save_queue_enabled {
+                                "On"
+                            } else {
+                                "Off"
+                            };
+                            state.notify(format!("Save Queue: {}", status));
                             config_changed = true;
                         }
                         _ => {}

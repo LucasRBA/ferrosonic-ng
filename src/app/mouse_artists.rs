@@ -105,6 +105,7 @@ impl App {
                                         ));
 
                                         drop(state);
+                                        self.save_queue_sync();
 
                                         return self.play_queue_position(0).await;
                                     }
@@ -174,6 +175,7 @@ impl App {
                     state.now_playing.channels = None;
                     state.notify(format!("Playing: {}", song.title));
                     drop(state);
+                    self.save_queue_sync();
 
                     if let Some(ref client) = self.subsonic {
                         if let Ok(url) = client.get_stream_url(&song.id) {

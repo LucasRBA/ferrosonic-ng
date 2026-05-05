@@ -58,6 +58,8 @@ impl App {
                                 state.queue_position = None;
                             }
                         }
+                        drop(state);
+                        self.save_queue_sync();
                     }
                 }
             }
@@ -75,6 +77,8 @@ impl App {
                                 state.queue_position = Some(idx);
                             }
                         }
+                        drop(state);
+                        self.save_queue_sync();
                     }
                 }
             }
@@ -92,6 +96,8 @@ impl App {
                                 state.queue_position = Some(idx);
                             }
                         }
+                        drop(state);
+                        self.save_queue_sync();
                     }
                 }
             }
@@ -112,6 +118,8 @@ impl App {
                     state.queue.shuffle(&mut rng);
                 }
                 state.notify("Queue shuffled");
+                drop(state);
+                self.save_queue_sync();
             }
             KeyCode::Char('c') => {
                 // Clear history (remove all songs before current position)
@@ -129,6 +137,8 @@ impl App {
                             }
                         }
                         state.notify(format!("Cleared {} played songs", removed));
+                        drop(state);
+                        self.save_queue_sync();
                     } else {
                         state.notify("No history to clear");
                     }

@@ -1,6 +1,7 @@
 //! Configuration loading and management
 
 pub mod paths;
+pub mod queue;
 
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -49,6 +50,10 @@ pub struct Config {
     /// Enable scrobbling (reporting played tracks to the server)
     #[serde(rename = "Scrobble", default = "Config::default_scrobble")]
     pub scrobble: bool,
+
+    /// Save and restore queue on launch
+    #[serde(rename = "SaveQueue", default = "Config::default_save_queue")]
+    pub save_queue: bool,
 }
 
 impl Config {
@@ -61,6 +66,10 @@ impl Config {
     }
 
     fn default_scrobble() -> bool {
+        true
+    }
+
+    fn default_save_queue() -> bool {
         true
     }
 

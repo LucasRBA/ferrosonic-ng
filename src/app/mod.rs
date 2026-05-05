@@ -201,8 +201,14 @@ impl App {
             self.load_initial_data().await;
         }
 
+        // Restore queue if enabled
+        self.restore_queue().await;
+
         // Main event loop
         let result = self.event_loop(&mut terminal).await;
+
+        // Save queue on exit if enabled
+        self.save_queue().await;
 
         // Cleanup cava
         self.stop_cava();
@@ -237,6 +243,96 @@ impl App {
         self.get_artists().await;
         self.get_playlists().await;
         self.get_radio_stations().await;
+    }
+
+    /// Restore queue from persistence file
+    async fn restore_queue(&mut self) {
+        let state = self.state.read().await;
+        let save_queue = state.config.save_queue;
+        drop(state);
+
+        if !save_queue {
+            return;
+        }
+
+        if let Some(persisted) = crate::config::queue::QueuePersist::load_default() {
+            if !persisted.queue.is_empty() {
+                let mut state = self.state.write().await;
+                let queue_len = persisted.queue.len();
+                state.queue = persisted.queue;
+                state.queue_position = persisted.queue_position;
+
+                // Restore queue selection
+                if let Some(pos) = state.queue_position {
+                    if pos < queue_len {
+                        state.queue_state.selected = Some(pos);
+                    } else if queue_len > 0 {
+                        state.queue_state.selected = Some(queue_len - 1);
+                    }
+                } else if queue_len > 0 {
+                    state.queue_state.selected = Some(0);
+                }
+
+                info!(
+                    "Queue restored: {} songs, position: {:?}",
+                    queue_len, state.queue_position
+                );
+                drop(state);
+            }
+        }
+    }
+
+    /// Save queue to persistence file
+    async fn save_queue(&self) {
+        let state = self.state.read().await;
+        let save_queue = state.config.save_queue;
+        let queue = state.queue.clone();
+        let queue_position = state.queue_position;
+        drop(state);
+
+        if !save_queue {
+            // Clear the queue file if persistence is disabled
+            let _ = crate::config::queue::QueuePersist::clear_default();
+            return;
+        }
+
+        let persist = crate::config::queue::QueuePersist {
+            queue,
+            queue_position,
+        };
+
+        if let Err(e) = persist.save_default() {
+            warn!("Failed to save queue: {}", e);
+        }
+    }
+
+    /// Save queue to persistence file (non-async, for use in input handlers)
+    fn save_queue_sync(&self) {
+        // Clone what we need while holding the lock briefly
+        let (save_queue, queue, queue_position) = {
+            let Ok(state) = self.state.try_read() else {
+                return;
+            };
+            (
+                state.config.save_queue,
+                state.queue.clone(),
+                state.queue_position,
+            )
+        };
+
+        if !save_queue {
+            let _ = crate::config::queue::QueuePersist::clear_default();
+            return;
+        }
+
+        let persist = crate::config::queue::QueuePersist {
+            queue,
+            queue_position,
+        };
+
+        if let Err(e) = persist.save_default() {
+            warn!("Failed to save queue: {}", e);
+        }
     }
 
     /// Main event loop

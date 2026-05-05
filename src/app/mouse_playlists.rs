@@ -77,6 +77,7 @@ impl App {
                     state.queue.clear();
                     state.queue.extend(songs);
                     drop(state);
+                    self.save_queue_sync();
                     self.last_click = Some((x, y, std::time::Instant::now()));
                     return self.play_queue_position(item_index).await;
                 }

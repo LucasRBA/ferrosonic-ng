@@ -341,6 +341,8 @@ pub struct SettingsState {
     pub notifications_enabled: bool,
     /// Scrobbling enabled
     pub scrobble_enabled: bool,
+    /// Save and restore queue on launch
+    pub save_queue_enabled: bool,
 }
 
 impl Default for SettingsState {
@@ -353,6 +355,7 @@ impl Default for SettingsState {
             cava_size: 40,
             notifications_enabled: false,
             scrobble_enabled: true,
+            save_queue_enabled: true,
         }
     }
 }
@@ -499,6 +502,8 @@ impl AppState {
         state.settings_state.notifications_enabled = config.notifications;
         // Initialize scrobbling from config
         state.settings_state.scrobble_enabled = config.scrobble;
+        // Initialize save queue from config
+        state.settings_state.save_queue_enabled = config.save_queue;
         // Default to All songs so navigation and rendering start in sync
         state.browse.selected_option = Some(SongOption::All);
 
