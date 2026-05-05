@@ -213,6 +213,7 @@ impl App {
                             state.queue.extend(songs);
                             state.notify(format!("Playing: {} ({} songs)", album_name, count));
                             drop(state);
+                            self.save_queue_sync();
                             return self.play_queue_position(0).await;
                         }
                         Err(e) => {
@@ -240,6 +241,7 @@ impl App {
                 let songs = state.browse.songs.clone();
                 state.queue.extend(songs);
                 drop(state);
+                self.save_queue_sync();
 
                 return self.play_queue_position(selected_song).await;
             }
@@ -338,6 +340,8 @@ impl App {
                 let mut state = self.state.write().await;
                 state.queue.push(song);
                 state.notify(format!("Added to queue: {}", title));
+                drop(state);
+                self.save_queue_sync();
             }
 
             // e: Add Album to queue
@@ -363,6 +367,8 @@ impl App {
                                 album.name.clone(),
                                 count
                             ));
+                            drop(state);
+                            self.save_queue_sync();
                         }
                         Err(e) => {
                             self.state
@@ -395,6 +401,8 @@ impl App {
                     state.notify(format!("Playing next: {}", title));
                     current_pos
                 };
+
+                self.save_queue_sync();
 
                 if let Some(pos) = current_pos {
                     self.remove_stale_preloaded_track(pos).await;
@@ -431,6 +439,8 @@ impl App {
                                 ));
                                 current_pos
                             };
+
+                            self.save_queue_sync();
 
                             if let Some(pos) = current_pos {
                                 self.remove_stale_preloaded_track(pos).await;
