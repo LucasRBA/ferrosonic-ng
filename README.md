@@ -16,6 +16,7 @@ Ferrosonic-ng is a continuation of the original [ferrosonic](https://github.com/
 - **Artist/album browser** — Tree-based navigation with expandable artists, album listings, and artist filtering
 - **Browse page** — Browse and search all, starred and random songs/albums from your server
 - **Playlists & queue management** — Browse server playlists, add/remove/reorder/shuffle queue, clear history
+- **Internet radio** — Browse and play Navidrome/Subsonic radio stations with live stream metadata when available
 - **Audio quality display** — Real-time sample rate, bit depth, codec, and channel layout
 - **Audio visualizer** — Integrated [cava](https://github.com/karlstav/cava) visualizer with theme-matched gradient colors
 - **13 built-in themes + custom themes** — Monokai, Dracula, Nord, Catppuccin, Tokyo Night, and more. Create your own as TOML files in `~/.config/ferrosonic/themes/`. See the [themes documentation](docs/themes.md)
@@ -85,7 +86,7 @@ ferrosonic -v
 
 ## Configuration
 
-Configuration is stored at `~/.config/ferrosonic/config.toml`. You can edit it manually or configure the server connection through the application's Server page (F5).
+Configuration is stored at `~/.config/ferrosonic/config.toml`. You can edit it manually or configure the server connection through the application's Server page (F6).
 
 ```toml
 BaseURL = "https://your-subsonic-server.com"

@@ -342,6 +342,104 @@ async fn get_playlist_api_error() {
     assert!(matches!(err, SubsonicError::Api { code: 70, .. }));
 }
 
+#[tokio::test]
+async fn get_internet_radio_stations_ok() {
+    let server = MockServer::start_async().await;
+    let mock = server
+        .mock_async(|when, then| {
+            when.method(GET).path("/rest/getInternetRadioStations");
+            then.status(200).body(
+                r#"{
+                    "subsonic-response": {
+                        "status": "ok",
+                        "version": "1.16.1",
+                        "internetRadioStations": {
+                            "internetRadioStation": [
+                                {
+                                    "id": "ir-1",
+                                    "name": "Station One",
+                                    "streamUrl": "https://example.com/radio.mp3",
+                                    "homePageUrl": "https://example.com",
+                                    "coverArt": "ir-1"
+                                },
+                                {
+                                    "id": "ir-2",
+                                    "name": "Station Two",
+                                    "streamUrl": "https://example.com/second.aac"
+                                }
+                            ]
+                        }
+                    }
+                }"#,
+            );
+        })
+        .await;
+
+    let stations = make_client(&server)
+        .get_internet_radio_stations()
+        .await
+        .unwrap();
+    assert_eq!(stations.len(), 2);
+    assert_eq!(stations[0].id, "ir-1");
+    assert_eq!(stations[0].name, "Station One");
+    assert_eq!(stations[0].stream_url, "https://example.com/radio.mp3");
+    assert_eq!(
+        stations[0].home_page_url.as_deref(),
+        Some("https://example.com")
+    );
+    assert_eq!(stations[0].cover_art.as_deref(), Some("ir-1"));
+    assert_eq!(stations[1].home_page_url, None);
+    assert_eq!(stations[1].cover_art, None);
+    mock.assert_async().await;
+}
+
+#[tokio::test]
+async fn get_internet_radio_stations_empty() {
+    let server = MockServer::start_async().await;
+    let mock = server
+        .mock_async(|when, then| {
+            when.method(GET).path("/rest/getInternetRadioStations");
+            then.status(200).body(
+                r#"{
+                    "subsonic-response": {
+                        "status": "ok",
+                        "version": "1.16.1",
+                        "internetRadioStations": {
+                            "internetRadioStation": []
+                        }
+                    }
+                }"#,
+            );
+        })
+        .await;
+
+    let stations = make_client(&server)
+        .get_internet_radio_stations()
+        .await
+        .unwrap();
+    assert!(stations.is_empty());
+    mock.assert_async().await;
+}
+
+#[tokio::test]
+async fn get_internet_radio_stations_api_error() {
+    let server = MockServer::start_async().await;
+    server
+        .mock_async(|when, then| {
+            when.method(GET).path("/rest/getInternetRadioStations");
+            then.status(200).body(
+                r#"{"subsonic-response":{"status":"failed","version":"1.16.1","error":{"code":70,"message":"Radio stations unavailable"}}}"#,
+            );
+        })
+        .await;
+
+    let err = make_client(&server)
+        .get_internet_radio_stations()
+        .await
+        .unwrap_err();
+    assert!(matches!(err, SubsonicError::Api { code: 70, .. }));
+}
+
 // get_starred_songs
 #[tokio::test]
 async fn get_starred_songs_ok() {

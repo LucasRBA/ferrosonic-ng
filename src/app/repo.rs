@@ -216,6 +216,26 @@ impl App {
         }
     }
 
+    pub async fn get_radio_stations(&mut self) {
+        if let Some(ref client) = self.subsonic {
+            match client.get_internet_radio_stations().await {
+                Ok(stations) => {
+                    let mut state = self.state.write().await;
+                    let count = stations.len();
+                    state.radio.stations = stations;
+                    state.radio.selected = if count > 0 { Some(0) } else { None };
+                    state.radio.scroll_offset = 0;
+                    info!("Loaded {} radio stations", count);
+                }
+                Err(e) => {
+                    error!("Failed to load radio stations: {}", e);
+                    let mut state = self.state.write().await;
+                    state.notify_error(format!("Failed to load radio stations: {}", e));
+                }
+            }
+        }
+    }
+
     pub async fn unstar_song(&mut self, id: String) {
         if let Some(ref client) = self.subsonic {
             match client.unstar_song(&id).await {

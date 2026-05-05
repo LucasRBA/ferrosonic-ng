@@ -18,7 +18,7 @@ Ferrosonic ships with 13 themes. On first run, the built-in themes are written a
 | **One Dark** | Atom One Dark color scheme |
 | **Ayu Dark** | Ayu Dark color scheme |
 
-Change themes with `t` from any page, from the Settings page (F6), or by editing the `Theme` field in `config.toml`.
+Change themes with `t` from any page, from the Settings page (F7), or by editing the `Theme` field in `config.toml`.
 
 ### Custom Themes
 

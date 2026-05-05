@@ -334,6 +334,16 @@ impl SubsonicClient {
         Ok(playlists)
     }
 
+    /// Get internet radio stations
+    pub async fn get_internet_radio_stations(
+        &self,
+    ) -> Result<Vec<InternetRadioStation>, SubsonicError> {
+        let data: InternetRadioStationsData = self.request("getInternetRadioStations").await?;
+        let stations = data.internet_radio_stations.internet_radio_station;
+        debug!("Fetched {} internet radio stations", stations.len());
+        Ok(stations)
+    }
+
     /// Get playlist details with songs
     pub async fn get_playlist(&self, id: &str) -> Result<(Playlist, Vec<Child>), SubsonicError> {
         let mut url = self.build_url("getPlaylist")?;

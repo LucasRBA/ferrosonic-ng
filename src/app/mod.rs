@@ -7,6 +7,7 @@ mod input_artists;
 mod input_browse;
 mod input_playlists;
 mod input_queue;
+mod input_radio;
 mod input_server;
 mod input_settings;
 pub mod models;
@@ -14,6 +15,7 @@ mod mouse;
 mod mouse_artists;
 mod mouse_browse;
 mod mouse_playlists;
+mod mouse_radio;
 mod notifications;
 mod playback;
 mod repo;
@@ -234,6 +236,7 @@ impl App {
         self.get_all_songs(false).await;
         self.get_artists().await;
         self.get_playlists().await;
+        self.get_radio_stations().await;
     }
 
     /// Main event loop

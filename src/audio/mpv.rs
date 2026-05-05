@@ -14,6 +14,13 @@ use tracing::{debug, info, trace};
 use crate::config::paths::mpv_socket_path;
 use crate::error::AudioError;
 
+/// Parsed live metadata for an internet radio stream.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct RadioMetadata {
+    pub title: Option<String>,
+    pub artist: Option<String>,
+}
+
 /// MPV IPC command
 #[derive(Debug, Serialize)]
 struct MpvCommand {
@@ -134,7 +141,10 @@ impl MpvController {
     /// Send a command to MPV
     fn send_command(&mut self, args: Vec<Value>) -> Result<Option<Value>, AudioError> {
         let result = self.try_send_command(args);
-        if matches!(&result, Err(AudioError::MpvIpc(_) | AudioError::MpvSocket(_))) {
+        if matches!(
+            &result,
+            Err(AudioError::MpvIpc(_) | AudioError::MpvSocket(_))
+        ) {
             self.socket = None;
         }
         result
@@ -349,6 +359,12 @@ impl MpvController {
         }))
     }
 
+    /// Get parsed live metadata for radio streams.
+    pub fn get_radio_metadata(&mut self) -> Result<RadioMetadata, AudioError> {
+        let data = self.send_command(vec![json!("get_property"), json!("metadata")])?;
+        Ok(data.as_ref().map(parse_radio_metadata).unwrap_or_default())
+    }
+
     /// Check if anything is loaded
     pub fn is_idle(&mut self) -> Result<bool, AudioError> {
         let data = self.send_command(vec![json!("get_property"), json!("idle-active")])?;
@@ -372,7 +388,95 @@ impl MpvController {
         info!("MPV shut down");
         Ok(())
     }
+}
 
+fn parse_radio_metadata(metadata: &Value) -> RadioMetadata {
+    let artist = metadata_string(metadata, "artist");
+    let title = metadata_string(metadata, "title");
+
+    if artist.is_some() && title.is_some() {
+        return RadioMetadata { title, artist };
+    }
+
+    if let Some(icy_title) = metadata_string(metadata, "icy-title") {
+        if let Some((artist, title)) = split_icy_title(&icy_title) {
+            return RadioMetadata {
+                title: Some(title),
+                artist: Some(artist),
+            };
+        }
+
+        return RadioMetadata {
+            title: Some(icy_title),
+            artist,
+        };
+    }
+
+    RadioMetadata { title, artist }
+}
+
+fn metadata_string(metadata: &Value, key: &str) -> Option<String> {
+    metadata
+        .get(key)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToString::to_string)
+}
+
+fn split_icy_title(value: &str) -> Option<(String, String)> {
+    let (artist, title) = value.split_once(" - ")?;
+    let artist = artist.trim();
+    let title = title.trim();
+    if artist.is_empty() || title.is_empty() {
+        None
+    } else {
+        Some((artist.to_string(), title.to_string()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_artist_and_title_metadata() {
+        let metadata = json!({ "artist": "Artist", "title": "Track" });
+
+        assert_eq!(
+            parse_radio_metadata(&metadata),
+            RadioMetadata {
+                title: Some("Track".to_string()),
+                artist: Some("Artist".to_string()),
+            }
+        );
+    }
+
+    #[test]
+    fn splits_icy_title_artist_title() {
+        let metadata = json!({ "icy-title": "Artist - Track" });
+
+        assert_eq!(
+            parse_radio_metadata(&metadata),
+            RadioMetadata {
+                title: Some("Track".to_string()),
+                artist: Some("Artist".to_string()),
+            }
+        );
+    }
+
+    #[test]
+    fn uses_raw_icy_title_when_unsplittable() {
+        let metadata = json!({ "icy-title": "Live Stream Title" });
+
+        assert_eq!(
+            parse_radio_metadata(&metadata),
+            RadioMetadata {
+                title: Some("Live Stream Title".to_string()),
+                artist: None,
+            }
+        );
+    }
 }
 
 impl Drop for MpvController {
