@@ -339,8 +339,6 @@ pub struct LyricsList {
 
 #[derive(Debug, Deserialize)]
 pub struct StructuredLyrics {
-    pub lang: Option<String>,
-    pub synced: bool,
     pub line: Vec<LyricsLine>,
 }
 

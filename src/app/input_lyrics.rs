@@ -1,4 +1,4 @@
-use std::time::{Instant, Duration};
+use std::time::Instant;
 use crossterm::event::{KeyCode, KeyModifiers};
 
 use crate::error::Error;
