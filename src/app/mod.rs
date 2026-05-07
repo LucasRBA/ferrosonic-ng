@@ -10,6 +10,7 @@ mod input_queue;
 mod input_radio;
 mod input_server;
 mod input_settings;
+mod input_lyrics;
 pub mod models;
 mod mouse;
 mod mouse_artists;

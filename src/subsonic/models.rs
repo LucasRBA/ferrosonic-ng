@@ -302,3 +302,66 @@ pub struct AlbumListInner {
 /// Ping response (for testing connection)
 #[derive(Debug, Deserialize)]
 pub struct PingData {}
+
+/// Lyrics response
+#[derive(Debug, Deserialize)]
+pub struct LyricsData {
+    pub lyrics: OneOrMany<Lyrics>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Lyrics {
+    #[serde(default)]
+    pub artist: Option<String>,
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(alias = "value", alias = "content", alias = "$value", default)]
+    pub content: Option<String>,
+}
+
+/// OpenSubsonic structured lyrics response
+#[derive(Debug, Deserialize)]
+pub struct LyricsListData {
+    #[serde(rename = "lyricsList")]
+    pub lyrics_list: Option<LyricsList>,
+    #[serde(rename = "structuredLyrics")]
+    pub structured_lyrics: Option<Vec<StructuredLyrics>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LyricsList {
+    #[serde(default)]
+    pub structured_lyrics: Vec<StructuredLyrics>,
+    #[serde(default)]
+    pub lyrics: Vec<Lyrics>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StructuredLyrics {
+    pub lang: Option<String>,
+    pub synced: bool,
+    pub line: Vec<LyricsLine>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LyricsLine {
+    pub start: Option<i64>,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum OneOrMany<T> {
+    One(T),
+    Many(Vec<T>),
+}
+
+impl<T> OneOrMany<T> {
+    pub fn first(&self) -> Option<&T> {
+        match self {
+            OneOrMany::One(t) => Some(t),
+            OneOrMany::Many(v) => v.first(),
+        }
+    }
+}

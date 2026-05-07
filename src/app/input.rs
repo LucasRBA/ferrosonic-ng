@@ -116,6 +116,10 @@ impl App {
                 state.page = Page::Settings;
                 return Ok(());
             }
+            (KeyCode::F(8), _) | (KeyCode::Char('y'), KeyModifiers::NONE) => {
+                state.page = Page::Lyrics;
+                return Ok(());
+            }
             // Playback controls (global)
             (KeyCode::Char('p'), KeyModifiers::NONE) | (KeyCode::Char(' '), KeyModifiers::NONE) => {
                 if key.code == KeyCode::Char(' ') && state.page == Page::Radio {
@@ -177,6 +181,7 @@ impl App {
             Page::Radio => self.handle_radio_key(key).await,
             Page::Server => self.handle_server_key(key).await,
             Page::Settings => self.handle_settings_key(key).await,
+            Page::Lyrics => self.handle_lyrics_key(key).await,
         }
     }
 }

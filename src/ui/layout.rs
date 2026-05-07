@@ -100,6 +100,9 @@ pub fn draw(frame: &mut Frame, state: &mut AppState) {
         Page::Settings => {
             pages::settings::render(frame, content_area, state);
         }
+        Page::Lyrics => {
+            pages::lyrics::render(frame, content_area, state);
+        }
     }
 
     // Render now playing

@@ -22,6 +22,7 @@ pub enum Page {
     Radio,
     Server,
     Settings,
+    Lyrics,
 }
 
 impl Page {
@@ -34,6 +35,7 @@ impl Page {
             Page::Radio => 4,
             Page::Server => 5,
             Page::Settings => 6,
+            Page::Lyrics => 7,
         }
     }
 
@@ -46,6 +48,7 @@ impl Page {
             Page::Radio => "Radio",
             Page::Server => "Server",
             Page::Settings => "Settings",
+            Page::Lyrics => "Lyrics",
         }
     }
 
@@ -58,6 +61,7 @@ impl Page {
             Page::Radio => "F5",
             Page::Server => "F6",
             Page::Settings => "F7",
+            Page::Lyrics => "F8",
         }
     }
 }
@@ -98,6 +102,12 @@ pub struct NowPlaying {
     pub channels: Option<String>,
     /// Whether the current track has already been scrobbled
     pub scrobbled: bool,
+    /// Lyrics for the currently playing song
+    pub lyrics: Option<String>,
+    /// Parsed lyrics for the currently playing song
+    pub parsed_lyrics: Option<crate::app::models::ParsedLyrics>,
+    /// Whether we have already checked for lyrics (to avoid redundant polls)
+    pub lyrics_checked: bool,
 }
 
 impl NowPlaying {
@@ -311,6 +321,19 @@ pub struct RadioState {
     pub scroll_offset: usize,
 }
 
+/// Lyrics page state
+#[derive(Debug, Clone, Default)]
+pub struct LyricsState {
+    /// Scroll offset for the lyrics text
+    pub scroll_offset: u16,
+    /// Whether the user is manually scrolling
+    pub is_manual_scroll: bool,
+    /// Last time the user scrolled
+    pub last_scroll_time: Option<Instant>,
+    /// Visual line spacing (extra empty lines)
+    pub line_spacing: u8,
+}
+
 /// Server page state (connection settings)
 #[derive(Debug, Clone, Default)]
 pub struct ServerState {
@@ -450,6 +473,8 @@ pub struct AppState {
     pub server_state: ServerState,
     /// Settings page state (app preferences)
     pub settings_state: SettingsState,
+    /// Lyrics page state
+    pub lyrics_state: LyricsState,
     /// Current notification
     pub notification: Option<Notification>,
     /// Whether the app should quit
@@ -502,13 +527,16 @@ impl AppState {
         state.settings_state.notifications_enabled = config.notifications;
         // Initialize scrobbling from config
         state.settings_state.scrobble_enabled = config.scrobble;
-        // Initialize save queue from config
+        // Initialize save and restore queue from config
         state.settings_state.save_queue_enabled = config.save_queue;
         // Default to All songs so navigation and rendering start in sync
-        state.browse.selected_option = Some(SongOption::All);
+        state.browse.selected_option = Some(crate::app::models::SongOption::All);
+
+        state.lyrics_state = LyricsState::default();
 
         state
-    }
+        }
+
 
     /// Get the currently playing song from the queue
     pub fn current_song(&self) -> Option<&Child> {

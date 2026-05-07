@@ -107,6 +107,9 @@ impl<'a> Footer<'a> {
             Page::Settings => {
                 binds.extend([("←/→/Enter", "Change theme")]);
             }
+            Page::Lyrics => {
+                binds.extend([("j/k", "Scroll"), ("g", "Top"), ("+/-", "Spacing")]);
+            }
         }
 
         binds
