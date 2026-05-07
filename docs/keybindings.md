@@ -19,6 +19,7 @@ Ferrosonic is fully keyboard-driven. Vim-style `j`/`k` navigation is available a
 | `F5` | Radio page |
 | `F6` | Server configuration page |
 | `F7` | Settings page |
+| `F8` | Lyrics page | 
 
 ## Songs Page (F1)
 
@@ -100,3 +101,17 @@ The Radio page lists internet radio stations from servers that support the Subso
 | `Right` / `Enter` | Next option |
 
 Settings include theme selection and cava visualizer toggle. Changes are saved automatically.
+
+## Lyrics Page (F8)
+
+| Key | Action |
+|---|---|
+| `Up` / `k` | Move lyrics up |
+| `Down` / `j` | Move lyrics down |
+| `Top` / `g` | Move to first line of the lyrics currently loaded |
+| `Increase line spacing` / `+` | Adds spacing equivalent to one line to the lyrics |
+| `Decrease line spacing` / `-` | Removes spacing equivalent to one line to the lyrics | 
+
+The Lyrics page support the following Subsonic endpoints: `getLyricsBySongId` (Preferred, modern), and `getLyrics` (Fallback, legacy version). Both implementations were tested through Navidrome.
+Note that in order to increase the size(lyrics font) the terminal itself needs to be zoomed(Ctrl and +, or Ctrl and mouse wheel up).
+
