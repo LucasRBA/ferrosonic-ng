@@ -20,9 +20,9 @@ pub enum Page {
     Queue,
     Playlists,
     Radio,
+    Lyrics,
     Server,
     Settings,
-    Lyrics,
 }
 
 impl Page {
@@ -33,9 +33,9 @@ impl Page {
             Page::Queue => 2,
             Page::Playlists => 3,
             Page::Radio => 4,
-            Page::Server => 5,
-            Page::Settings => 6,
-            Page::Lyrics => 7,
+            Page::Lyrics => 5,
+            Page::Server => 6,
+            Page::Settings => 7,
         }
     }
 
@@ -46,9 +46,9 @@ impl Page {
             Page::Queue => "Queue",
             Page::Playlists => "Playlists",
             Page::Radio => "Radio",
+            Page::Lyrics => "Lyrics",
             Page::Server => "Server",
             Page::Settings => "Settings",
-            Page::Lyrics => "Lyrics",
         }
     }
 
@@ -59,9 +59,9 @@ impl Page {
             Page::Queue => "F3",
             Page::Playlists => "F4",
             Page::Radio => "F5",
-            Page::Server => "F6",
-            Page::Settings => "F7",
-            Page::Lyrics => "F8",
+            Page::Lyrics => "F6",
+            Page::Server => "F7",
+            Page::Settings => "F8",
         }
     }
 }
@@ -325,7 +325,7 @@ pub struct RadioState {
 #[derive(Debug, Clone, Default)]
 pub struct LyricsState {
     /// Scroll offset for the lyrics text
-    pub scroll_offset: u16,
+    pub scroll_offset: usize,
     /// Whether the user is manually scrolling
     pub is_manual_scroll: bool,
     /// Last time the user scrolled
@@ -535,7 +535,7 @@ impl AppState {
         state.lyrics_state = LyricsState::default();
 
         state
-        }
+    }
 
 
     /// Get the currently playing song from the queue

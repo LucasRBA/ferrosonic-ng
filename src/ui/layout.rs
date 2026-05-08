@@ -94,14 +94,14 @@ pub fn draw(frame: &mut Frame, state: &mut AppState) {
         Page::Radio => {
             pages::radio::render(frame, content_area, state);
         }
+        Page::Lyrics => {
+            pages::lyrics::render(frame, content_area, state);
+        }
         Page::Server => {
             pages::server::render(frame, content_area, state);
         }
         Page::Settings => {
             pages::settings::render(frame, content_area, state);
-        }
-        Page::Lyrics => {
-            pages::lyrics::render(frame, content_area, state);
         }
     }
 

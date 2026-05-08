@@ -641,7 +641,7 @@ impl App {
 
         {
             let mut state = state.write().await;
-            state.now_playing.lyrics = Some("Searching for lyrics...".to_string());
+            state.notify(format!("Searching for lyrics..."));
         }
 
         tokio::spawn(async move {

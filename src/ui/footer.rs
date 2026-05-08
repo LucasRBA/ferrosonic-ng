@@ -97,6 +97,16 @@ impl<'a> Footer<'a> {
                     ("Ctrl+R", "Refresh"),
                 ]);
             }
+            Page::Lyrics => {
+                binds.extend([
+                    ("j/k", "Scroll"),
+                    ("g", "Top"),
+                    ("+/-", "Spacing"),
+                    ("Crtl+B","Page Up"),
+                    ("Crtl+F","Page Down"),
+                    ("a", "Auto-scroll"),
+                ]);
+            }
             Page::Server => {
                 binds.extend([
                     ("Tab", "Next field"),
@@ -106,9 +116,6 @@ impl<'a> Footer<'a> {
             }
             Page::Settings => {
                 binds.extend([("←/→/Enter", "Change theme")]);
-            }
-            Page::Lyrics => {
-                binds.extend([("j/k", "Scroll"), ("g", "Top"), ("+/-", "Spacing")]);
             }
         }
 

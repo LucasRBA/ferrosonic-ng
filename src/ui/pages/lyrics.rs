@@ -57,7 +57,7 @@ pub fn render(frame: &mut Frame, area: Rect, state: &mut AppState) {
             let line_height = 1 + spacing;
             let center_offset = (area.height.saturating_sub(2) / 2) as usize;
             let target_row = idx * line_height;
-            state.lyrics_state.scroll_offset = target_row.saturating_sub(center_offset) as u16;
+            state.lyrics_state.scroll_offset = target_row.saturating_sub(center_offset) as usize;
         }
     } else if state.lyrics_state.is_manual_scroll {
         // Auto-resume after 5 seconds of inactivity if synced
@@ -91,7 +91,7 @@ pub fn render(frame: &mut Frame, area: Rect, state: &mut AppState) {
 
     let paragraph = Paragraph::new(lines)
         .block(block)
-        .scroll((state.lyrics_state.scroll_offset, 0));
+        .scroll((state.lyrics_state.scroll_offset.try_into().unwrap(), 0));
 
     frame.render_widget(paragraph, area);
 }

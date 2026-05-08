@@ -311,11 +311,9 @@ pub struct LyricsData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Lyrics {
-    #[serde(default)]
     pub artist: Option<String>,
-    #[serde(default)]
     pub title: Option<String>,
-    #[serde(alias = "value", alias = "content", alias = "$value", default)]
+    #[serde(alias = "value", alias = "content", alias = "$value")]
     pub content: Option<String>,
 }
 
