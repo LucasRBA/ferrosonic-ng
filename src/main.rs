@@ -16,6 +16,12 @@ mod subsonic;
 mod ui;
 
 use clap::Parser;
+use crossterm::{
+    cursor::Show,
+    event::DisableMouseCapture,
+    execute,
+    terminal::{disable_raw_mode, LeaveAlternateScreen},
+};
 use std::fs::{self, File};
 use std::path::PathBuf;
 use tracing::info;
@@ -118,6 +124,14 @@ async fn main() -> anyhow::Result<()> {
             &config.base_url
         }
     );
+
+    // Install panic hook to restore terminal on crash
+    let original_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let _ = disable_raw_mode();
+        let _ = execute!(std::io::stdout(), LeaveAlternateScreen, DisableMouseCapture, Show);
+        original_hook(info);
+    }));
 
     // Run the application
     let mut app = App::new(config);
