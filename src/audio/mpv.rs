@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use tracing::{debug, info, trace};
+use tracing::{debug, info, trace, warn};
 
 use crate::config::paths::mpv_socket_path;
 use crate::error::AudioError;
@@ -141,12 +141,18 @@ impl MpvController {
         if let Some(ref mut child) = self.process {
             match child.try_wait() {
                 Ok(None) => true,
-                _ => {
+                Ok(Some(_status)) => {
+                    self.socket = None;
+                    false
+                }
+                Err(e) => {
+                    warn!("MPV process check failed: {}", e);
                     self.socket = None;
                     false
                 }
             }
         } else {
+            self.socket = None;
             false
         }
     }
