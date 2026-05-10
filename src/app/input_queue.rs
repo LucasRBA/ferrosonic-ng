@@ -42,6 +42,7 @@ impl App {
                 // Remove selected song
                 if let Some(idx) = state.queue_state.selected {
                     if idx < state.queue.len() {
+                        let was_playing = state.queue_position == Some(idx);
                         let song = state.queue.remove(idx);
                         state.notify(format!("Removed: {}", song.title));
                         // Adjust selection
@@ -57,6 +58,20 @@ impl App {
                             } else if idx == pos {
                                 state.queue_position = None;
                             }
+                        }
+                        if was_playing {
+                            let _ = self.mpv.stop();
+                            state.now_playing.state = PlaybackState::Stopped;
+                            state.now_playing.song = None;
+                            state.now_playing.radio_station = None;
+                            state.now_playing.radio_title = None;
+                            state.now_playing.radio_artist = None;
+                            state.now_playing.position = 0.0;
+                            state.now_playing.duration = 0.0;
+                            state.now_playing.sample_rate = None;
+                            state.now_playing.bit_depth = None;
+                            state.now_playing.format = None;
+                            state.now_playing.channels = None;
                         }
                         drop(state);
                         self.save_queue_sync();
