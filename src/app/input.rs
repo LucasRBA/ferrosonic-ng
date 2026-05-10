@@ -136,6 +136,18 @@ impl App {
                 drop(state);
                 return self.prev_track().await;
             }
+            // Seek backward 5 seconds
+            (KeyCode::Char('H'), KeyModifiers::SHIFT) => {
+                drop(state);
+                let _ = self.mpv.seek_relative(-5.0);
+                return Ok(());
+            }
+            // Seek forward 5 seconds
+            (KeyCode::Char('L'), KeyModifiers::SHIFT) => {
+                drop(state);
+                let _ = self.mpv.seek_relative(5.0);
+                return Ok(());
+            }
             // Cycle theme (global)
             (KeyCode::Char('t'), KeyModifiers::NONE) => {
                 state.settings_state.next_theme();
