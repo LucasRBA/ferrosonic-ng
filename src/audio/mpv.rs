@@ -134,8 +134,21 @@ impl MpvController {
     }
 
     /// Check if MPV is running
-    pub fn is_running(&self) -> bool {
-        self.socket.is_some()
+    pub fn is_running(&mut self) -> bool {
+        if self.socket.is_none() {
+            return false;
+        }
+        if let Some(ref mut child) = self.process {
+            match child.try_wait() {
+                Ok(None) => true,
+                _ => {
+                    self.socket = None;
+                    false
+                }
+            }
+        } else {
+            false
+        }
     }
 
     /// Send a command to MPV
