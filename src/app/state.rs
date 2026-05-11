@@ -272,6 +272,11 @@ pub struct ArtistsState {
     pub song_scroll_offset: usize,
 }
 
+impl ArtistsState {
+    /// Maximum number of artist album caches to retain.
+    pub const MAX_ALBUMS_CACHE: usize = 100;
+}
+
 /// Queue page state
 #[derive(Debug, Clone, Default)]
 pub struct QueueState {
