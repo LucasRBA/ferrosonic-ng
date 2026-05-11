@@ -72,6 +72,8 @@ pub struct App {
     cava_pty_master: Option<std::fs::File>,
     /// Cava terminal parser
     cava_parser: Option<vt100::Parser>,
+    /// Cava temp config path (for cleanup)
+    cava_config_path: Option<std::path::PathBuf>,
     /// Last mouse click position and time (for second-click detection)
     last_click: Option<(u16, u16, std::time::Instant)>,
     /// Debounce timer for All-songs filter input; fires a search 300 ms after the last keypress
@@ -110,6 +112,7 @@ impl App {
             cava_process: None,
             cava_pty_master: None,
             cava_parser: None,
+            cava_config_path: None,
             last_click: None,
             songs_filter_debounce: None,
             audio_rx,
