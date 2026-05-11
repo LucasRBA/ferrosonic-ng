@@ -1,6 +1,7 @@
 //! PipeWire sample rate control
 
 use std::process::Command;
+use tokio::task;
 use tracing::{debug, error, info};
 
 use crate::error::AudioError;
@@ -16,7 +17,7 @@ pub struct PipeWireController {
 impl PipeWireController {
     /// Create a new PipeWire controller
     pub fn new() -> Self {
-        let original_rate = Self::get_current_rate_internal().ok();
+        let original_rate = task::block_in_place(|| Self::get_current_rate_blocking().ok());
         debug!("Original PipeWire sample rate: {:?}", original_rate);
 
         Self {
@@ -25,8 +26,8 @@ impl PipeWireController {
         }
     }
 
-    /// Get current sample rate from PipeWire
-    fn get_current_rate_internal() -> Result<u32, AudioError> {
+    /// Blocking helper to get current sample rate from PipeWire
+    fn get_current_rate_blocking() -> Result<u32, AudioError> {
         let output = Command::new("pw-metadata")
             .arg("-n")
             .arg("settings")
@@ -61,13 +62,8 @@ impl PipeWireController {
         self.current_rate
     }
 
-    /// Set the sample rate
-    pub fn set_rate(&mut self, rate: u32) -> Result<(), AudioError> {
-        if self.current_rate == Some(rate) {
-            debug!("Sample rate already set to {}", rate);
-            return Ok(());
-        }
-
+    /// Blocking helper to set the sample rate
+    fn set_rate_blocking(rate: u32) -> Result<(), AudioError> {
         info!("Setting PipeWire sample rate to {} Hz", rate);
 
         let output = Command::new("pw-metadata")
@@ -87,6 +83,17 @@ impl PipeWireController {
             )));
         }
 
+        Ok(())
+    }
+
+    /// Set the sample rate
+    pub fn set_rate(&mut self, rate: u32) -> Result<(), AudioError> {
+        if self.current_rate == Some(rate) {
+            debug!("Sample rate already set to {}", rate);
+            return Ok(());
+        }
+
+        task::block_in_place(|| Self::set_rate_blocking(rate))?;
         self.current_rate = Some(rate);
         Ok(())
     }
@@ -105,8 +112,8 @@ impl PipeWireController {
         Ok(())
     }
 
-    /// Clear the forced sample rate (let PipeWire use default)
-    pub fn clear_forced_rate(&mut self) -> Result<(), AudioError> {
+    /// Blocking helper to clear the forced sample rate
+    fn clear_forced_rate_blocking() -> Result<(), AudioError> {
         info!("Clearing PipeWire forced sample rate");
 
         let output = Command::new("pw-metadata")
@@ -126,6 +133,12 @@ impl PipeWireController {
             )));
         }
 
+        Ok(())
+    }
+
+    /// Clear the forced sample rate (let PipeWire use default)
+    pub fn clear_forced_rate(&mut self) -> Result<(), AudioError> {
+        task::block_in_place(|| Self::clear_forced_rate_blocking())?;
         self.current_rate = None;
         Ok(())
     }
@@ -140,8 +153,16 @@ impl Default for PipeWireController {
 
 impl Drop for PipeWireController {
     fn drop(&mut self) {
-        if let Err(e) = self.restore_original() {
-            error!("Failed to restore sample rate: {}", e);
+        if let Some(rate) = self.original_rate {
+            std::thread::spawn(move || {
+                if rate > 0 {
+                    if let Err(e) = Self::set_rate_blocking(rate) {
+                        error!("Failed to restore sample rate: {}", e);
+                    }
+                } else if let Err(e) = Self::clear_forced_rate_blocking() {
+                    error!("Failed to clear forced sample rate: {}", e);
+                }
+            });
         }
     }
 }
