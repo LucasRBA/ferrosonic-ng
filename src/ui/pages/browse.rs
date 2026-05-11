@@ -7,12 +7,16 @@ use ratatui::{
 };
 
 use crate::app::models::{BrowseTab, SongOption};
-use crate::app::state::AppState;
+use crate::app::state::{AppState, RenderMutations};
 use crate::ui::styled_lines::{get_album_line, get_song_with_artist_line};
 use crate::ui::theme::ThemeColors;
 use strum::IntoEnumIterator;
 
-pub fn render(frame: &mut Frame, area: Rect, state: &mut AppState) {
+/// Render the browse page.
+///
+/// Scroll offsets are written to `mutations` so they can be applied under a
+/// write lock after the render pass.
+pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut RenderMutations) {
     let colors = *state.settings_state.theme_colors();
 
     let chunks = Layout::vertical([
@@ -28,8 +32,8 @@ pub fn render(frame: &mut Frame, area: Rect, state: &mut AppState) {
     render_search(frame, chunks[2], state, &colors);
 
     match state.browse.browse_tab {
-        BrowseTab::Songs => render_songs(frame, chunks[3], state, &colors),
-        BrowseTab::Albums => render_albums(frame, chunks[3], state, &colors),
+        BrowseTab::Songs => render_songs(frame, chunks[3], state, mutations, &colors),
+        BrowseTab::Albums => render_albums(frame, chunks[3], state, mutations, &colors),
     }
 }
 
@@ -140,7 +144,13 @@ fn render_search(frame: &mut Frame, area: Rect, state: &AppState, colors: &Theme
     frame.render_widget(paragraph, area);
 }
 
-fn render_songs(frame: &mut Frame, area: Rect, state: &mut AppState, colors: &ThemeColors) {
+fn render_songs(
+    frame: &mut Frame,
+    area: Rect,
+    state: &AppState,
+    mutations: &mut RenderMutations,
+    colors: &ThemeColors,
+) {
     let songs = &state.browse;
     let focused = songs.focus == 1;
 
@@ -192,10 +202,16 @@ fn render_songs(frame: &mut Frame, area: Rect, state: &mut AppState, colors: &Th
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    state.browse.scroll_offset = list_state.offset();
+    mutations.browse_scroll_offset = Some(list_state.offset());
 }
 
-fn render_albums(frame: &mut Frame, area: Rect, state: &mut AppState, colors: &ThemeColors) {
+fn render_albums(
+    frame: &mut Frame,
+    area: Rect,
+    state: &AppState,
+    mutations: &mut RenderMutations,
+    colors: &ThemeColors,
+) {
     let browse_state = &state.browse;
     let focused = browse_state.focus == 1;
 
@@ -243,5 +259,5 @@ fn render_albums(frame: &mut Frame, area: Rect, state: &mut AppState, colors: &T
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    state.browse.album_scroll_offset = list_state.offset();
+    mutations.browse_album_scroll_offset = Some(list_state.offset());
 }

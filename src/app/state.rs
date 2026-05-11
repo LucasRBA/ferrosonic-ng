@@ -423,6 +423,23 @@ pub struct LayoutAreas {
     pub content_right: Option<Rect>,
 }
 
+/// Mutable values produced during a render pass so drawing can run under a read lock.
+///
+/// Each scroll offset is `Option<usize>` so that only values actually touched by the
+/// current page are written back, preventing cross-page state corruption.
+#[derive(Debug, Default)]
+pub struct RenderMutations {
+    pub layout: LayoutAreas,
+    pub browse_scroll_offset: Option<usize>,
+    pub browse_album_scroll_offset: Option<usize>,
+    pub queue_scroll_offset: Option<usize>,
+    pub radio_scroll_offset: Option<usize>,
+    pub playlists_playlist_scroll_offset: Option<usize>,
+    pub playlists_song_scroll_offset: Option<usize>,
+    pub artists_tree_scroll_offset: Option<usize>,
+    pub artists_song_scroll_offset: Option<usize>,
+}
+
 /// Complete application state
 #[derive(Debug, Default)]
 pub struct AppState {

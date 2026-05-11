@@ -5,15 +5,19 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::state::{AppState, LayoutAreas, Page};
+use crate::app::state::{AppState, LayoutAreas, Page, RenderMutations};
 
 use super::footer::Footer;
 use super::header::Header;
 use super::pages;
 use super::widgets::{CavaWidget, NowPlayingWidget};
 
-/// Draw the entire UI
-pub fn draw(frame: &mut Frame, state: &mut AppState) {
+/// Draw the entire UI.
+///
+/// Rendering runs under a read lock on `AppState`. Any values that must be
+/// mutated (scroll offsets, layout areas) are collected into `mutations` and
+/// applied afterward under a brief write lock.
+pub fn draw(frame: &mut Frame, state: &AppState, mutations: &mut RenderMutations) {
     let area = frame.area();
 
     let cava_active = state.settings_state.cava_enabled && !state.cava_screen.is_empty();
@@ -58,7 +62,7 @@ pub fn draw(frame: &mut Frame, state: &mut AppState) {
     };
 
     // Store layout areas for mouse hit-testing
-    state.layout = LayoutAreas {
+    mutations.layout = LayoutAreas {
         header: header_area,
         content: content_area,
         now_playing: now_playing_area,
@@ -80,19 +84,19 @@ pub fn draw(frame: &mut Frame, state: &mut AppState) {
     // Render current page
     match state.page {
         Page::Browse => {
-            pages::browse::render(frame, content_area, state);
+            pages::browse::render(frame, content_area, state, mutations);
         }
         Page::Artists => {
-            pages::artists::render(frame, content_area, state);
+            pages::artists::render(frame, content_area, state, mutations);
         }
         Page::Queue => {
-            pages::queue::render(frame, content_area, state);
+            pages::queue::render(frame, content_area, state, mutations);
         }
         Page::Playlists => {
-            pages::playlists::render(frame, content_area, state);
+            pages::playlists::render(frame, content_area, state, mutations);
         }
         Page::Radio => {
-            pages::radio::render(frame, content_area, state);
+            pages::radio::render(frame, content_area, state, mutations);
         }
         Page::Server => {
             pages::server::render(frame, content_area, state);
