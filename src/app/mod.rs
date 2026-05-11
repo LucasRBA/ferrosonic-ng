@@ -352,11 +352,25 @@ impl App {
             };
 
             // Draw UI
+            let mut mutations = RenderMutations::default();
+            {
+                let state = self.state.read().await;
+                terminal
+                    .draw(|frame| ui::draw(frame, &state, &mut mutations))
+                    .map_err(UiError::Render)?;
+            }
+            // Apply render mutations under a brief write lock
             {
                 let mut state = self.state.write().await;
-                terminal
-                    .draw(|frame| ui::draw(frame, &mut state))
-                    .map_err(UiError::Render)?;
+                state.layout = mutations.layout;
+                state.browse.scroll_offset = mutations.browse_scroll_offset;
+                state.browse.album_scroll_offset = mutations.browse_album_scroll_offset;
+                state.queue_state.scroll_offset = mutations.queue_scroll_offset;
+                state.radio.scroll_offset = mutations.radio_scroll_offset;
+                state.playlists.playlist_scroll_offset = mutations.playlists_playlist_scroll_offset;
+                state.playlists.song_scroll_offset = mutations.playlists_song_scroll_offset;
+                state.artists.tree_scroll_offset = mutations.artists_tree_scroll_offset;
+                state.artists.song_scroll_offset = mutations.artists_song_scroll_offset;
             }
 
             // Check for quit

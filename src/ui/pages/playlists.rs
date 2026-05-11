@@ -8,24 +8,29 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::state::AppState;
+use crate::app::state::{AppState, RenderMutations};
 use crate::ui::theme::ThemeColors;
 
-
 /// Render the playlists page
-pub fn render(frame: &mut Frame, area: Rect, state: &mut AppState) {
+pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut RenderMutations) {
     let colors = *state.settings_state.theme_colors();
 
     // Split into two panes: [Playlists] [Songs]
     let chunks =
         Layout::horizontal([Constraint::Percentage(40), Constraint::Percentage(60)]).split(area);
 
-    render_playlists(frame, chunks[0], state, &colors);
-    render_songs(frame, chunks[1], state, &colors);
+    render_playlists(frame, chunks[0], state, mutations, &colors);
+    render_songs(frame, chunks[1], state, mutations, &colors);
 }
 
 /// Render the playlists list
-fn render_playlists(frame: &mut Frame, area: Rect, state: &mut AppState, colors: &ThemeColors) {
+fn render_playlists(
+    frame: &mut Frame,
+    area: Rect,
+    state: &AppState,
+    mutations: &mut RenderMutations,
+    colors: &ThemeColors,
+) {
     let playlists = &state.playlists;
 
     let focused = playlists.focus == 0;
@@ -106,11 +111,17 @@ fn render_playlists(frame: &mut Frame, area: Rect, state: &mut AppState, colors:
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    state.playlists.playlist_scroll_offset = list_state.offset();
+    mutations.playlists_playlist_scroll_offset = list_state.offset();
 }
 
 /// Render the songs in selected playlist
-fn render_songs(frame: &mut Frame, area: Rect, state: &mut AppState, colors: &ThemeColors) {
+fn render_songs(
+    frame: &mut Frame,
+    area: Rect,
+    state: &AppState,
+    mutations: &mut RenderMutations,
+    colors: &ThemeColors,
+) {
     let playlists = &state.playlists;
 
     let focused = playlists.focus == 1;
@@ -197,5 +208,5 @@ fn render_songs(frame: &mut Frame, area: Rect, state: &mut AppState, colors: &Th
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    state.playlists.song_scroll_offset = list_state.offset();
+    mutations.playlists_song_scroll_offset = list_state.offset();
 }

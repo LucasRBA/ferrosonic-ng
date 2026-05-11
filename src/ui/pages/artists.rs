@@ -7,7 +7,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::state::AppState;
+use crate::app::state::{AppState, RenderMutations};
 use crate::subsonic::models::{Album, Artist};
 use crate::ui::styled_lines::get_song_without_artist_line;
 use crate::ui::theme::ThemeColors;
@@ -67,19 +67,25 @@ pub fn build_tree_items(state: &AppState) -> Vec<TreeItem> {
 }
 
 /// Render the artists page
-pub fn render(frame: &mut Frame, area: Rect, state: &mut AppState) {
+pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut RenderMutations) {
     let colors = *state.settings_state.theme_colors();
 
     // Split into two panes: [Tree Browser] [Song List]
     let chunks =
         Layout::horizontal([Constraint::Percentage(40), Constraint::Percentage(60)]).split(area);
 
-    render_tree(frame, chunks[0], state, &colors);
-    render_songs(frame, chunks[1], state, &colors);
+    render_tree(frame, chunks[0], state, mutations, &colors);
+    render_songs(frame, chunks[1], state, mutations, &colors);
 }
 
 /// Render the artist/album tree
-fn render_tree(frame: &mut Frame, area: Rect, state: &mut AppState, colors: &ThemeColors) {
+fn render_tree(
+    frame: &mut Frame,
+    area: Rect,
+    state: &AppState,
+    mutations: &mut RenderMutations,
+    colors: &ThemeColors,
+) {
     let artists = &state.artists;
 
     let focused = artists.focus == 0;
@@ -168,11 +174,17 @@ fn render_tree(frame: &mut Frame, area: Rect, state: &mut AppState, colors: &The
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    state.artists.tree_scroll_offset = list_state.offset();
+    mutations.artists_tree_scroll_offset = list_state.offset();
 }
 
 /// Render the song list for selected album
-fn render_songs(frame: &mut Frame, area: Rect, state: &mut AppState, colors: &ThemeColors) {
+fn render_songs(
+    frame: &mut Frame,
+    area: Rect,
+    state: &AppState,
+    mutations: &mut RenderMutations,
+    colors: &ThemeColors,
+) {
     let artists = &state.artists;
 
     let focused = artists.focus == 1;
@@ -250,5 +262,5 @@ fn render_songs(frame: &mut Frame, area: Rect, state: &mut AppState, colors: &Th
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    state.artists.song_scroll_offset = list_state.offset();
+    mutations.artists_song_scroll_offset = list_state.offset();
 }

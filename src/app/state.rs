@@ -423,6 +423,20 @@ pub struct LayoutAreas {
     pub content_right: Option<Rect>,
 }
 
+/// Mutable values produced during a render pass so drawing can run under a read lock.
+#[derive(Debug, Default)]
+pub struct RenderMutations {
+    pub layout: LayoutAreas,
+    pub browse_scroll_offset: usize,
+    pub browse_album_scroll_offset: usize,
+    pub queue_scroll_offset: usize,
+    pub radio_scroll_offset: usize,
+    pub playlists_playlist_scroll_offset: usize,
+    pub playlists_song_scroll_offset: usize,
+    pub artists_tree_scroll_offset: usize,
+    pub artists_song_scroll_offset: usize,
+}
+
 /// Complete application state
 #[derive(Debug, Default)]
 pub struct AppState {
