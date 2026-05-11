@@ -351,7 +351,7 @@ impl App {
                 Duration::from_millis(100)
             };
 
-            // Draw UI
+            // Draw UI under a read lock, collecting mutations for later application.
             let mut mutations = RenderMutations::default();
             {
                 let state = self.state.read().await;
@@ -359,18 +359,36 @@ impl App {
                     .draw(|frame| ui::draw(frame, &state, &mut mutations))
                     .map_err(UiError::Render)?;
             }
-            // Apply render mutations under a brief write lock
+            // Apply render mutations under a brief write lock.
+            // Only fields that were actually set by the current page are written back,
+            // preventing cross-page scroll offset corruption.
             {
                 let mut state = self.state.write().await;
                 state.layout = mutations.layout;
-                state.browse.scroll_offset = mutations.browse_scroll_offset;
-                state.browse.album_scroll_offset = mutations.browse_album_scroll_offset;
-                state.queue_state.scroll_offset = mutations.queue_scroll_offset;
-                state.radio.scroll_offset = mutations.radio_scroll_offset;
-                state.playlists.playlist_scroll_offset = mutations.playlists_playlist_scroll_offset;
-                state.playlists.song_scroll_offset = mutations.playlists_song_scroll_offset;
-                state.artists.tree_scroll_offset = mutations.artists_tree_scroll_offset;
-                state.artists.song_scroll_offset = mutations.artists_song_scroll_offset;
+                if let Some(v) = mutations.browse_scroll_offset {
+                    state.browse.scroll_offset = v;
+                }
+                if let Some(v) = mutations.browse_album_scroll_offset {
+                    state.browse.album_scroll_offset = v;
+                }
+                if let Some(v) = mutations.queue_scroll_offset {
+                    state.queue_state.scroll_offset = v;
+                }
+                if let Some(v) = mutations.radio_scroll_offset {
+                    state.radio.scroll_offset = v;
+                }
+                if let Some(v) = mutations.playlists_playlist_scroll_offset {
+                    state.playlists.playlist_scroll_offset = v;
+                }
+                if let Some(v) = mutations.playlists_song_scroll_offset {
+                    state.playlists.song_scroll_offset = v;
+                }
+                if let Some(v) = mutations.artists_tree_scroll_offset {
+                    state.artists.tree_scroll_offset = v;
+                }
+                if let Some(v) = mutations.artists_song_scroll_offset {
+                    state.artists.song_scroll_offset = v;
+                }
             }
 
             // Check for quit

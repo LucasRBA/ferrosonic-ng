@@ -12,6 +12,10 @@ use crate::ui::styled_lines::{get_album_line, get_song_with_artist_line};
 use crate::ui::theme::ThemeColors;
 use strum::IntoEnumIterator;
 
+/// Render the browse page.
+///
+/// Scroll offsets are written to `mutations` so they can be applied under a
+/// write lock after the render pass.
 pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut RenderMutations) {
     let colors = *state.settings_state.theme_colors();
 
@@ -198,7 +202,7 @@ fn render_songs(
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    mutations.browse_scroll_offset = list_state.offset();
+    mutations.browse_scroll_offset = Some(list_state.offset());
 }
 
 fn render_albums(
@@ -255,5 +259,5 @@ fn render_albums(
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    mutations.browse_album_scroll_offset = list_state.offset();
+    mutations.browse_album_scroll_offset = Some(list_state.offset());
 }

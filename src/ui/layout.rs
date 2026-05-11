@@ -12,7 +12,11 @@ use super::header::Header;
 use super::pages;
 use super::widgets::{CavaWidget, NowPlayingWidget};
 
-/// Draw the entire UI
+/// Draw the entire UI.
+///
+/// Rendering runs under a read lock on `AppState`. Any values that must be
+/// mutated (scroll offsets, layout areas) are collected into `mutations` and
+/// applied afterward under a brief write lock.
 pub fn draw(frame: &mut Frame, state: &AppState, mutations: &mut RenderMutations) {
     let area = frame.area();
 

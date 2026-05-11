@@ -10,7 +10,10 @@ use ratatui::{
 
 use crate::app::state::{AppState, RenderMutations};
 
-/// Render the queue page
+/// Render the queue page.
+///
+/// Scroll offsets are written to `mutations` so they can be applied under a
+/// write lock after the render pass.
 pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut RenderMutations) {
     let colors = *state.settings_state.theme_colors();
 
@@ -120,5 +123,5 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut R
     list_state.select(state.queue_state.selected);
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    mutations.queue_scroll_offset = list_state.offset();
+    mutations.queue_scroll_offset = Some(list_state.offset());
 }

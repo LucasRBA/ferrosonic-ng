@@ -10,7 +10,10 @@ use ratatui::{
 
 use crate::app::state::{AppState, RenderMutations};
 
-/// Render the radio page
+/// Render the radio page.
+///
+/// Scroll offsets are written to `mutations` so they can be applied under a
+/// write lock after the render pass.
 pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut RenderMutations) {
     let colors = *state.settings_state.theme_colors();
     let radio = &state.radio;
@@ -92,5 +95,5 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut R
     list_state.select(radio.selected);
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    mutations.radio_scroll_offset = list_state.offset();
+    mutations.radio_scroll_offset = Some(list_state.offset());
 }

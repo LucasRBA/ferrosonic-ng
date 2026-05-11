@@ -66,7 +66,10 @@ pub fn build_tree_items(state: &AppState) -> Vec<TreeItem> {
     items
 }
 
-/// Render the artists page
+/// Render the artists page.
+///
+/// Scroll offsets are written to `mutations` so they can be applied under a
+/// write lock after the render pass.
 pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut RenderMutations) {
     let colors = *state.settings_state.theme_colors();
 
@@ -174,7 +177,7 @@ fn render_tree(
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    mutations.artists_tree_scroll_offset = list_state.offset();
+    mutations.artists_tree_scroll_offset = Some(list_state.offset());
 }
 
 /// Render the song list for selected album
@@ -262,5 +265,5 @@ fn render_songs(
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    mutations.artists_song_scroll_offset = list_state.offset();
+    mutations.artists_song_scroll_offset = Some(list_state.offset());
 }

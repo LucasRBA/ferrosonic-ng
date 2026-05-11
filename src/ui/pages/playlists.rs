@@ -11,7 +11,10 @@ use ratatui::{
 use crate::app::state::{AppState, RenderMutations};
 use crate::ui::theme::ThemeColors;
 
-/// Render the playlists page
+/// Render the playlists page.
+///
+/// Scroll offsets are written to `mutations` so they can be applied under a
+/// write lock after the render pass.
 pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut RenderMutations) {
     let colors = *state.settings_state.theme_colors();
 
@@ -111,7 +114,7 @@ fn render_playlists(
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    mutations.playlists_playlist_scroll_offset = list_state.offset();
+    mutations.playlists_playlist_scroll_offset = Some(list_state.offset());
 }
 
 /// Render the songs in selected playlist
@@ -208,5 +211,5 @@ fn render_songs(
     }
 
     frame.render_stateful_widget(list, area, &mut list_state);
-    mutations.playlists_song_scroll_offset = list_state.offset();
+    mutations.playlists_song_scroll_offset = Some(list_state.offset());
 }
