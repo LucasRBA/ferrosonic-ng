@@ -152,7 +152,12 @@ impl Widget for Footer<'_> {
 
         // Right side: sample rate / status
         if let Some(rate) = self.sample_rate {
-            let rate_str = format!("{}kHz", rate / 1000);
+            let khz = rate as f64 / 1000.0;
+            let rate_str = if khz == khz.floor() {
+                format!("{}kHz", khz as u32)
+            } else {
+                format!("{:.1}kHz", khz)
+            };
             let x = chunks[1].x + chunks[1].width.saturating_sub(rate_str.len() as u16);
             buf.set_string(
                 x,
