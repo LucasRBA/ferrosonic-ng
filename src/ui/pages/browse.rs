@@ -181,7 +181,7 @@ fn render_songs(
                 .current_song()
                 .map(|s| s.id == song.id)
                 .unwrap_or(false);
-            let line = get_song_with_artist_line(&song, is_selected, is_playing, &colors);
+            let line = get_song_with_artist_line(song, is_selected, is_playing, colors);
             ListItem::new(line)
         })
         .collect();
@@ -232,13 +232,20 @@ fn render_albums(
         .title(title)
         .border_style(border_style);
 
+    let current_song = state.current_song();
     let items: Vec<ListItem> = browse_state
         .albums
         .iter()
         .enumerate()
         .map(|(i, album)| {
             let is_selected = Some(i) == browse_state.selected_album && focused;
-            let line = get_album_line(album, is_selected, colors);
+            let is_playing = current_song
+                .map(|s| {
+                    s.parent.as_deref() == Some(album.id.as_str())
+                        || s.album.as_deref() == Some(album.name.as_str())
+                })
+                .unwrap_or(false);
+            let line = get_album_line(album, is_selected, is_playing, colors);
             ListItem::new(line)
         })
         .collect();
