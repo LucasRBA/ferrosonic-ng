@@ -513,6 +513,10 @@ impl SubsonicClient {
                         }
                     }
                 }
+
+                // If the modern endpoint succeeded (status ok) but returned no lyrics, 
+                // do not fall back to the fuzzy legacy endpoint.
+                return Ok(None);
             }
         }
 
