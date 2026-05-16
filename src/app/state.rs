@@ -25,17 +25,15 @@ pub enum Page {
 }
 
 impl Page {
-    pub fn index(&self) -> usize {
-        match self {
-            Page::Browse => 0,
-            Page::Artists => 1,
-            Page::Queue => 2,
-            Page::Playlists => 3,
-            Page::Radio => 4,
-            Page::Server => 5,
-            Page::Settings => 6,
-        }
-    }
+    pub const DEFAULT_TABS: [Page; 7] = [
+        Page::Browse,
+        Page::Artists,
+        Page::Queue,
+        Page::Playlists,
+        Page::Radio,
+        Page::Server,
+        Page::Settings,
+    ];
 
     pub fn label(&self) -> &'static str {
         match self {
@@ -58,6 +56,39 @@ impl Page {
             Page::Radio => "F5",
             Page::Server => "F6",
             Page::Settings => "F7",
+        }
+    }
+
+    pub fn from_config_name(name: &str) -> Option<Self> {
+        match name
+            .to_ascii_lowercase()
+            .replace([' ', '-', '_'], "")
+            .as_str()
+        {
+            "browse" => Some(Page::Browse),
+            "artists" => Some(Page::Artists),
+            "queue" => Some(Page::Queue),
+            "playlists" => Some(Page::Playlists),
+            "radio" => Some(Page::Radio),
+            "server" => Some(Page::Server),
+            "settings" => Some(Page::Settings),
+            _ => None,
+        }
+    }
+
+    pub fn visible_from_config(names: &[String]) -> Vec<Self> {
+        let mut pages = Vec::new();
+        for name in names {
+            if let Some(page) = Page::from_config_name(name) {
+                if !pages.contains(&page) {
+                    pages.push(page);
+                }
+            }
+        }
+        if pages.is_empty() {
+            Page::DEFAULT_TABS.to_vec()
+        } else {
+            pages
         }
     }
 }
@@ -567,6 +598,50 @@ impl AppState {
     /// Clear the notification
     pub fn clear_notification(&mut self) {
         self.notification = None;
+    }
+
+    pub fn visible_pages(&self) -> Vec<Page> {
+        Page::visible_from_config(&self.config.visible_tabs)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Page;
+
+    #[test]
+    fn visible_pages_use_default_when_not_configured() {
+        assert_eq!(Page::visible_from_config(&[]), Page::DEFAULT_TABS);
+    }
+
+    #[test]
+    fn visible_pages_follow_config_order() {
+        let names = vec![
+            "Artists".to_string(),
+            "Queue".to_string(),
+            "Playlists".to_string(),
+            "Browse".to_string(),
+        ];
+
+        assert_eq!(
+            Page::visible_from_config(&names),
+            vec![Page::Artists, Page::Queue, Page::Playlists, Page::Browse]
+        );
+    }
+
+    #[test]
+    fn visible_pages_ignore_unknown_and_duplicate_names() {
+        let names = vec![
+            "Queue".to_string(),
+            "Nope".to_string(),
+            "queue".to_string(),
+            "Server".to_string(),
+        ];
+
+        assert_eq!(
+            Page::visible_from_config(&names),
+            vec![Page::Queue, Page::Server]
+        );
     }
 }
 

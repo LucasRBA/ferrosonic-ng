@@ -25,20 +25,20 @@ impl App {
         let state = self.state.read().await;
         let layout = state.layout.clone();
         let page = state.page;
+        let visible_pages = state.visible_pages();
         let duration = state.now_playing.duration;
         let radio_active = state.now_playing.radio_station.is_some();
         drop(state);
 
         // Check header area
         if y >= layout.header.y && y < layout.header.y + layout.header.height {
-            if let Some(region) = Header::region_at(layout.header, x, y) {
+            if let Some(region) = Header::region_at(layout.header, x, y, &visible_pages) {
                 match region {
                     HeaderRegion::Tab(tab_page) => {
                         let mut state = self.state.write().await;
                         state.page = tab_page;
 
-                        let on_starred =
-                            state.browse.selected_option == Some(SongOption::Starred);
+                        let on_starred = state.browse.selected_option == Some(SongOption::Starred);
                         let browse_tab = state.browse.browse_tab.clone();
                         let refresh_songs = on_starred
                             && browse_tab == BrowseTab::Songs

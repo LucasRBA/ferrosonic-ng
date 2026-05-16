@@ -54,6 +54,10 @@ pub struct Config {
     /// Save and restore queue on launch
     #[serde(rename = "SaveQueue", default = "Config::default_save_queue")]
     pub save_queue: bool,
+
+    /// Header tabs to show, in order. Empty uses the default tab list.
+    #[serde(rename = "VisibleTabs", default, skip_serializing_if = "Vec::is_empty")]
+    pub visible_tabs: Vec<String>,
 }
 
 impl Config {
@@ -181,6 +185,7 @@ mod tests {
 BaseURL = "https://example.com"
 Username = "testuser"
 Password = "testpass"
+VisibleTabs = ["Artists", "Queue", "Browse"]
 "#;
 
         let mut file = NamedTempFile::new().unwrap();
@@ -190,6 +195,7 @@ Password = "testpass"
         assert_eq!(config.base_url, "https://example.com");
         assert_eq!(config.username, "testuser");
         assert_eq!(config.password, "testpass");
+        assert_eq!(config.visible_tabs, ["Artists", "Queue", "Browse"]);
     }
 
     #[test]
