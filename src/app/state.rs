@@ -47,18 +47,6 @@ impl Page {
         }
     }
 
-    pub fn shortcut(&self) -> &'static str {
-        match self {
-            Page::Browse => "F1",
-            Page::Artists => "F2",
-            Page::Queue => "F3",
-            Page::Playlists => "F4",
-            Page::Radio => "F5",
-            Page::Server => "F6",
-            Page::Settings => "F7",
-        }
-    }
-
     pub fn from_config_name(name: &str) -> Option<Self> {
         match name
             .to_ascii_lowercase()

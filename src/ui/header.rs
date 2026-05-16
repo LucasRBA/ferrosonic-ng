@@ -33,6 +33,10 @@ impl Header {
             colors,
         }
     }
+
+    fn tab_label(index: usize, page: &Page) -> String {
+        format!("F{} {}", index + 1, page.label())
+    }
 }
 
 impl Widget for Header {
@@ -48,7 +52,8 @@ impl Widget for Header {
         let titles: Vec<Line> = self
             .visible_pages
             .iter()
-            .map(|p: &Page| Line::from(format!("{} {}", p.shortcut(), p.label())))
+            .enumerate()
+            .map(|(i, page)| Line::from(Header::tab_label(i, page)))
             .collect();
         let selected = self
             .visible_pages
@@ -127,7 +132,7 @@ impl Header {
             let rel_x = x - chunks[0].x;
             let mut cursor: u16 = 0;
             for (i, page) in visible_pages.iter().enumerate() {
-                let label = format!("{} {}", page.shortcut(), page.label());
+                let label = Header::tab_label(i, page);
                 let tab_width = padding + label.len() as u16 + padding;
                 if rel_x >= cursor && rel_x < cursor + tab_width {
                     return Some(HeaderRegion::Tab(*page));
