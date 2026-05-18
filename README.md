@@ -100,6 +100,8 @@ Notifications = true
 RandomSongsCount = 100
 Scrobble = true
 SaveQueue = true
+# Valid tabs: Browse, Artists, Queue, Playlists, Radio, Server, Settings
+VisibleTabs = ["Browse", "Artists", "Queue", "Playlists", "Radio", "Server", "Settings"]
 ```
 
 | Field | Type | Default | Description |
@@ -114,6 +116,7 @@ SaveQueue = true
 | `RandomSongsCount` | `usize` | `250` | Number of random songs to fetch |
 | `Scrobble` | `bool` | `true` | Enable scrobbling (reporting played tracks to the server) |
 | `SaveQueue` | `bool` | `true` | Save and restore the play queue and current position on launch |
+| `VisibleTabs` | `string[]` | all tabs | Header tabs to show, in order. Valid values: `Browse`, `Artists`, `Queue`, `Playlists`, `Radio`, `Server`, `Settings` |
 
 Logs are written to `~/.config/ferrosonic/ferrosonic.log`.
 

@@ -14,17 +14,28 @@ use crate::ui::theme::ThemeColors;
 /// Header bar widget
 pub struct Header {
     current_page: Page,
+    visible_pages: Vec<Page>,
     playback_state: PlaybackState,
     colors: ThemeColors,
 }
 
 impl Header {
-    pub fn new(current_page: Page, playback_state: PlaybackState, colors: ThemeColors) -> Self {
+    pub fn new(
+        current_page: Page,
+        visible_pages: Vec<Page>,
+        playback_state: PlaybackState,
+        colors: ThemeColors,
+    ) -> Self {
         Self {
             current_page,
+            visible_pages,
             playback_state,
             colors,
         }
+    }
+
+    fn tab_label(index: usize, page: &Page) -> String {
+        format!("F{} {}", index + 1, page.label())
     }
 }
 
@@ -38,21 +49,20 @@ impl Widget for Header {
         let chunks = Layout::horizontal([Constraint::Min(40), Constraint::Length(30)]).split(area);
 
         // Page tabs
-        let titles: Vec<Line> = [
-            Page::Browse,
-            Page::Artists,
-            Page::Queue,
-            Page::Playlists,
-            Page::Radio,
-            Page::Server,
-            Page::Settings,
-        ]
-        .iter()
-        .map(|p: &Page| Line::from(format!("{} {}", p.shortcut(), p.label())))
-        .collect();
+        let titles: Vec<Line> = self
+            .visible_pages
+            .iter()
+            .enumerate()
+            .map(|(i, page)| Line::from(Header::tab_label(i, page)))
+            .collect();
+        let selected = self
+            .visible_pages
+            .iter()
+            .position(|page| *page == self.current_page)
+            .unwrap_or(titles.len());
 
         let tabs = Tabs::new(titles)
-            .select(self.current_page.index())
+            .select(selected)
             .highlight_style(
                 Style::default()
                     .fg(self.colors.primary)
@@ -109,36 +119,27 @@ pub enum HeaderRegion {
 
 impl Header {
     /// Determine which region was clicked
-    pub fn region_at(area: Rect, x: u16, _y: u16) -> Option<HeaderRegion> {
+    pub fn region_at(area: Rect, x: u16, _y: u16, visible_pages: &[Page]) -> Option<HeaderRegion> {
         let chunks = Layout::horizontal([Constraint::Min(40), Constraint::Length(30)]).split(area);
 
         if x >= chunks[0].x && x < chunks[0].x + chunks[0].width {
             // Tab area — compute actual tab positions matching Tabs widget rendering.
             // Tabs renders: [pad][title][pad] [divider] [pad][title][pad] ...
             // Default padding = 1 space each side. Divider = " │ " = 3 chars.
-            let pages = [
-                Page::Browse,
-                Page::Artists,
-                Page::Queue,
-                Page::Playlists,
-                Page::Radio,
-                Page::Server,
-                Page::Settings,
-            ];
             let divider_width: u16 = 3; // " │ "
             let padding: u16 = 1; // 1 space each side
 
             let rel_x = x - chunks[0].x;
             let mut cursor: u16 = 0;
-            for (i, page) in pages.iter().enumerate() {
-                let label = format!("{} {}", page.shortcut(), page.label());
+            for (i, page) in visible_pages.iter().enumerate() {
+                let label = Header::tab_label(i, page);
                 let tab_width = padding + label.len() as u16 + padding;
                 if rel_x >= cursor && rel_x < cursor + tab_width {
                     return Some(HeaderRegion::Tab(*page));
                 }
                 cursor += tab_width;
                 // Add divider (except after the last tab)
-                if i < pages.len() - 1 {
+                if i < visible_pages.len() - 1 {
                     cursor += divider_width;
                 }
             }
