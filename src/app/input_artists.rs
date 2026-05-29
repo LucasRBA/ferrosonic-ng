@@ -373,6 +373,11 @@ impl App {
                                                 Ok((_artist, albums)) => {
                                                     let mut state = self.state.write().await;
                                                     let count = albums.len();
+                                                    if state.artists.albums_cache.len()
+                                                        >= ArtistsState::MAX_ALBUMS_CACHE
+                                                    {
+                                                        state.artists.albums_cache.clear();
+                                                    }
                                                     state
                                                         .artists
                                                         .albums_cache

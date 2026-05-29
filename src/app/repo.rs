@@ -7,6 +7,12 @@ impl App {
     /// Page size used by the Albums view (max allowed by getAlbumList2).
     const ALL_ALBUMS_PAGE_SIZE: usize = 500;
 
+    /// Maximum number of songs to keep in the All-songs view to prevent unbounded growth.
+    const MAX_BROWSE_SONGS: usize = 5000;
+
+    /// Maximum number of albums to keep in the Albums view to prevent unbounded growth.
+    const MAX_BROWSE_ALBUMS: usize = 5000;
+
     /// Fetch the next page of songs for the "All" view via `search3`.
     ///
     /// When `append` is `false` the song list is replaced (used on first load
@@ -35,6 +41,9 @@ impl App {
 
                     if append {
                         state.browse.songs.extend(songs);
+                        if state.browse.songs.len() > Self::MAX_BROWSE_SONGS {
+                            state.browse.songs.truncate(Self::MAX_BROWSE_SONGS);
+                        }
                     } else {
                         state.browse.songs = songs;
                         state.browse.selected_index = if fetched > 0 { Some(0) } else { None };
@@ -120,6 +129,9 @@ impl App {
                     let scroll = state.browse.album_scroll_offset;
                     if append {
                         state.browse.backing_albums.extend(albums);
+                        if state.browse.backing_albums.len() > Self::MAX_BROWSE_ALBUMS {
+                            state.browse.backing_albums.truncate(Self::MAX_BROWSE_ALBUMS);
+                        }
                     } else {
                         state.browse.backing_albums = albums;
                     }

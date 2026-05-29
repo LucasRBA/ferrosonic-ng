@@ -26,18 +26,16 @@ pub enum Page {
 }
 
 impl Page {
-    pub fn index(&self) -> usize {
-        match self {
-            Page::Browse => 0,
-            Page::Artists => 1,
-            Page::Queue => 2,
-            Page::Playlists => 3,
-            Page::Radio => 4,
-            Page::Lyrics => 5,
-            Page::Server => 6,
-            Page::Settings => 7,
-        }
-    }
+    pub const DEFAULT_TABS: [Page; 8] = [
+        Page::Browse,
+        Page::Artists,
+        Page::Queue,
+        Page::Playlists,
+        Page::Radio,
+        Page::Lyrics,
+        Page::Server,
+        Page::Settings,
+    ];
 
     pub fn label(&self) -> &'static str {
         match self {
@@ -52,16 +50,37 @@ impl Page {
         }
     }
 
-    pub fn shortcut(&self) -> &'static str {
-        match self {
-            Page::Browse => "F1",
-            Page::Artists => "F2",
-            Page::Queue => "F3",
-            Page::Playlists => "F4",
-            Page::Radio => "F5",
-            Page::Lyrics => "F6",
-            Page::Server => "F7",
-            Page::Settings => "F8",
+    pub fn from_config_name(name: &str) -> Option<Self> {
+        match name
+            .to_ascii_lowercase()
+            .replace([' ', '-', '_'], "")
+            .as_str()
+        {
+            "browse" => Some(Page::Browse),
+            "artists" => Some(Page::Artists),
+            "queue" => Some(Page::Queue),
+            "playlists" => Some(Page::Playlists),
+            "radio" => Some(Page::Radio),
+            "lyrics" => Some(Page::Lyrics),
+            "server" => Some(Page::Server),
+            "settings" => Some(Page::Settings),
+            _ => None,
+        }
+    }
+
+    pub fn visible_from_config(names: &[String]) -> Vec<Self> {
+        let mut pages = Vec::new();
+        for name in names {
+            if let Some(page) = Page::from_config_name(name) {
+                if !pages.contains(&page) {
+                    pages.push(page);
+                }
+            }
+        }
+        if pages.is_empty() {
+            Page::DEFAULT_TABS.to_vec()
+        } else {
+            pages
         }
     }
 }
@@ -282,6 +301,11 @@ pub struct ArtistsState {
     pub song_scroll_offset: usize,
 }
 
+impl ArtistsState {
+    /// Maximum number of artist album caches to retain.
+    pub const MAX_ALBUMS_CACHE: usize = 100;
+}
+
 /// Queue page state
 #[derive(Debug, Clone, Default)]
 pub struct QueueState {
@@ -446,6 +470,23 @@ pub struct LayoutAreas {
     pub content_right: Option<Rect>,
 }
 
+/// Mutable values produced during a render pass so drawing can run under a read lock.
+///
+/// Each scroll offset is `Option<usize>` so that only values actually touched by the
+/// current page are written back, preventing cross-page state corruption.
+#[derive(Debug, Default)]
+pub struct RenderMutations {
+    pub layout: LayoutAreas,
+    pub browse_scroll_offset: Option<usize>,
+    pub browse_album_scroll_offset: Option<usize>,
+    pub queue_scroll_offset: Option<usize>,
+    pub radio_scroll_offset: Option<usize>,
+    pub playlists_playlist_scroll_offset: Option<usize>,
+    pub playlists_song_scroll_offset: Option<usize>,
+    pub artists_tree_scroll_offset: Option<usize>,
+    pub artists_song_scroll_offset: Option<usize>,
+}
+
 /// Complete application state
 #[derive(Debug, Default)]
 pub struct AppState {
@@ -572,6 +613,50 @@ impl AppState {
     /// Clear the notification
     pub fn clear_notification(&mut self) {
         self.notification = None;
+    }
+
+    pub fn visible_pages(&self) -> Vec<Page> {
+        Page::visible_from_config(&self.config.visible_tabs)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Page;
+
+    #[test]
+    fn visible_pages_use_default_when_not_configured() {
+        assert_eq!(Page::visible_from_config(&[]), Page::DEFAULT_TABS);
+    }
+
+    #[test]
+    fn visible_pages_follow_config_order() {
+        let names = vec![
+            "Artists".to_string(),
+            "Queue".to_string(),
+            "Playlists".to_string(),
+            "Browse".to_string(),
+        ];
+
+        assert_eq!(
+            Page::visible_from_config(&names),
+            vec![Page::Artists, Page::Queue, Page::Playlists, Page::Browse]
+        );
+    }
+
+    #[test]
+    fn visible_pages_ignore_unknown_and_duplicate_names() {
+        let names = vec![
+            "Queue".to_string(),
+            "Nope".to_string(),
+            "queue".to_string(),
+            "Server".to_string(),
+        ];
+
+        assert_eq!(
+            Page::visible_from_config(&names),
+            vec![Page::Queue, Page::Server]
+        );
     }
 }
 

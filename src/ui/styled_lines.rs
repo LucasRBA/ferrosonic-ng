@@ -17,7 +17,7 @@ pub fn get_song_with_artist_line<'a>(
     let star_indicator = if is_starred { "★ " } else { "  " };
     let indicator = if is_playing { "▶ " } else { "  " };
 
-    let (title_color, artist_color, duration_color) = get_colors(is_selected, is_playing, &colors);
+    let (title_color, artist_color, duration_color) = get_colors(is_selected, is_playing, colors);
     let artist = match &song.artist {
         Some(value) => value,
         None => "n/a",
@@ -37,7 +37,7 @@ pub fn get_song_with_artist_line<'a>(
         ),
     ]);
 
-    return line;
+    line
 }
 
 pub fn get_song_without_artist_line<'a>(
@@ -52,7 +52,7 @@ pub fn get_song_without_artist_line<'a>(
     let star_indicator = if is_starred { "★ " } else { "  " };
     let indicator = if is_playing { "▶ " } else { "  " };
 
-    let (title_color, track_color, duration_color) = get_colors(is_selected, is_playing, &colors);
+    let (title_color, track_color, duration_color) = get_colors(is_selected, is_playing, colors);
 
     let track = if has_multiple_discs {
         match (song.disc_number, song.track) {
@@ -82,22 +82,25 @@ pub fn get_song_without_artist_line<'a>(
             Style::default().fg(duration_color),
         ),
     ]);
-    return line;
+    line
 }
 
-pub fn get_album_line<'a>(album: &Album, is_selected: bool, colors: &ThemeColors) -> Line<'a> {
+pub fn get_album_line<'a>(
+    album: &Album,
+    is_selected: bool,
+    is_playing: bool,
+    colors: &ThemeColors,
+) -> Line<'a> {
     let is_starred = album.starred.is_some();
     let star_indicator = if is_starred { "★ " } else { "  " };
+    let indicator = if is_playing { "▶ " } else { "  " };
 
-    let title_color = if is_selected {
-        colors.highlight_fg
+    let (title_color, meta_color) = if is_selected {
+        (colors.highlight_fg, colors.highlight_fg)
+    } else if is_playing {
+        (colors.playing, colors.muted)
     } else {
-        colors.song
-    };
-    let meta_color = if is_selected {
-        colors.highlight_fg
-    } else {
-        colors.muted
+        (colors.song, colors.muted)
     };
 
     let artist = album.artist.as_deref().unwrap_or("").trim();
@@ -110,7 +113,7 @@ pub fn get_album_line<'a>(album: &Album, is_selected: bool, colors: &ThemeColors
     };
 
     Line::from(vec![
-        Span::raw("  "),
+        Span::styled(indicator, Style::default().fg(colors.playing)),
         Span::styled(star_indicator, Style::default().fg(colors.playing)),
         Span::styled(album.name.clone(), Style::default().fg(title_color)),
         Span::styled(meta_text, Style::default().fg(meta_color)),
@@ -118,7 +121,7 @@ pub fn get_album_line<'a>(album: &Album, is_selected: bool, colors: &ThemeColors
 }
 
 fn get_colors(is_selected: bool, is_playing: bool, colors: &ThemeColors) -> (Color, Color, Color) {
-    return if is_selected {
+    if is_selected {
         (
             colors.highlight_fg,
             colors.highlight_fg,
@@ -128,5 +131,5 @@ fn get_colors(is_selected: bool, is_playing: bool, colors: &ThemeColors) -> (Col
         (colors.playing, colors.muted, colors.muted)
     } else {
         (colors.song, colors.muted, colors.muted)
-    };
+    }
 }

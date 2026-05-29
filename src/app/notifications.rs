@@ -1,9 +1,10 @@
 use notify_rust::{Hint, Notification, Timeout};
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicU32, Ordering};
 use tracing::error;
 
-/// Holds the ID of the last notification so we can replace it
-static LAST_NOTIFICATION_ID: Mutex<Option<u32>> = Mutex::new(None);
+/// Holds the ID of the last notification so we can replace it.
+/// A value of 0 means no notification has been sent yet.
+static LAST_NOTIFICATION_ID: AtomicU32 = AtomicU32::new(0);
 
 pub struct TrackInfo {
     pub title: String,
@@ -22,26 +23,15 @@ pub fn notify_track_change(track: &TrackInfo) {
         .timeout(Timeout::Milliseconds(5000));
 
     // Replace the previous notification instead of stacking
-    let previous_id = match LAST_NOTIFICATION_ID.lock() {
-        Ok(last_id) => *last_id,
-        Err(poisoned) => {
-            error!("LAST_NOTIFICATION_ID lock poisoned while reading previous notification ID");
-            *poisoned.into_inner()
-        }
-    };
-
-    if let Some(id) = previous_id {
-        builder.id(id);
+    let previous_id = LAST_NOTIFICATION_ID.load(Ordering::SeqCst);
+    if previous_id != 0 {
+        builder.id(previous_id);
     }
 
     match builder.show() {
-        Ok(handle) => match LAST_NOTIFICATION_ID.lock() {
-            Ok(mut last_id) => *last_id = Some(handle.id()),
-            Err(poisoned) => {
-                error!("LAST_NOTIFICATION_ID lock poisoned while storing notification ID");
-                *poisoned.into_inner() = Some(handle.id());
-            }
-        },
+        Ok(handle) => {
+            LAST_NOTIFICATION_ID.store(handle.id(), Ordering::SeqCst);
+        }
         Err(e) => error!("Failed to show notification: {}", e),
     }
 }

@@ -9,7 +9,8 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use tracing::{debug, info, trace};
+use tokio::task;
+use tracing::{debug, info, trace, warn};
 
 use crate::config::paths::mpv_socket_path;
 use crate::error::AudioError;
@@ -102,13 +103,15 @@ impl MpvController {
         self.process = Some(child);
 
         // Wait for socket to become available
-        for _ in 0..50 {
-            if self.socket_path.exists() {
-                std::thread::sleep(Duration::from_millis(50));
-                break;
+        task::block_in_place(|| {
+            for _ in 0..50 {
+                if self.socket_path.exists() {
+                    std::thread::sleep(Duration::from_millis(50));
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(100));
             }
-            std::thread::sleep(Duration::from_millis(100));
-        }
+        });
 
         if !self.socket_path.exists() {
             return Err(AudioError::MpvIpc("Socket not created".to_string()));
@@ -121,7 +124,9 @@ impl MpvController {
 
     /// Connect to the MPV socket
     fn connect(&mut self) -> Result<(), AudioError> {
-        let stream = UnixStream::connect(&self.socket_path).map_err(AudioError::MpvSocket)?;
+        let stream = task::block_in_place(|| {
+            UnixStream::connect(&self.socket_path).map_err(AudioError::MpvSocket)
+        })?;
 
         // Set read timeout
         stream
@@ -134,8 +139,27 @@ impl MpvController {
     }
 
     /// Check if MPV is running
-    pub fn is_running(&self) -> bool {
-        self.socket.is_some()
+    pub fn is_running(&mut self) -> bool {
+        if self.socket.is_none() {
+            return false;
+        }
+        if let Some(ref mut child) = self.process {
+            match child.try_wait() {
+                Ok(None) => true,
+                Ok(Some(_status)) => {
+                    self.socket = None;
+                    false
+                }
+                Err(e) => {
+                    warn!("MPV process check failed: {}", e);
+                    self.socket = None;
+                    false
+                }
+            }
+        } else {
+            self.socket = None;
+            false
+        }
     }
 
     /// Send a command to MPV
@@ -151,50 +175,52 @@ impl MpvController {
     }
 
     fn try_send_command(&mut self, args: Vec<Value>) -> Result<Option<Value>, AudioError> {
-        let socket = self.socket.as_mut().ok_or(AudioError::MpvNotRunning)?;
+        task::block_in_place(|| {
+            let socket = self.socket.as_mut().ok_or(AudioError::MpvNotRunning)?;
 
-        let request_id = self.request_id.fetch_add(1, Ordering::SeqCst);
-        let cmd = MpvCommand {
-            command: args,
-            request_id,
-        };
+            let request_id = self.request_id.fetch_add(1, Ordering::SeqCst);
+            let cmd = MpvCommand {
+                command: args,
+                request_id,
+            };
 
-        let json = serde_json::to_string(&cmd)?;
-        debug!("Sending MPV command: {}", json);
+            let json = serde_json::to_string(&cmd)?;
+            debug!("Sending MPV command: {}", json);
 
-        writeln!(socket, "{}", json).map_err(|e| AudioError::MpvIpc(e.to_string()))?;
-        socket
-            .flush()
-            .map_err(|e| AudioError::MpvIpc(e.to_string()))?;
+            writeln!(socket, "{}", json).map_err(|e| AudioError::MpvIpc(e.to_string()))?;
+            socket
+                .flush()
+                .map_err(|e| AudioError::MpvIpc(e.to_string()))?;
 
-        // Read response
-        let mut reader = BufReader::new(socket.try_clone().map_err(AudioError::MpvSocket)?);
-        let mut line = String::new();
+            // Read response
+            let mut reader = BufReader::new(socket.try_clone().map_err(AudioError::MpvSocket)?);
+            let mut line = String::new();
 
-        loop {
-            line.clear();
-            match reader.read_line(&mut line) {
-                Ok(0) => return Err(AudioError::MpvIpc("Socket closed".to_string())),
-                Ok(_) => {
-                    if let Ok(resp) = serde_json::from_str::<MpvResponse>(&line) {
-                        if resp.request_id == Some(request_id) {
-                            if resp.error != "success" {
-                                return Err(AudioError::MpvCommand(resp.error));
+            loop {
+                line.clear();
+                match reader.read_line(&mut line) {
+                    Ok(0) => return Err(AudioError::MpvIpc("Socket closed".to_string())),
+                    Ok(_) => {
+                        if let Ok(resp) = serde_json::from_str::<MpvResponse>(&line) {
+                            if resp.request_id == Some(request_id) {
+                                if resp.error != "success" {
+                                    return Err(AudioError::MpvCommand(resp.error));
+                                }
+                                return Ok(resp.data);
                             }
-                            return Ok(resp.data);
+                        }
+                        // Log discarded events for diagnostics
+                        if let Ok(event) = serde_json::from_str::<MpvEvent>(&line) {
+                            trace!("MPV event: {:?}", event);
                         }
                     }
-                    // Log discarded events for diagnostics
-                    if let Ok(event) = serde_json::from_str::<MpvEvent>(&line) {
-                        trace!("MPV event: {:?}", event);
+                    Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                        std::thread::sleep(Duration::from_millis(1));
                     }
+                    Err(e) => return Err(AudioError::MpvIpc(e.to_string())),
                 }
-                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                    std::thread::sleep(Duration::from_millis(1));
-                }
-                Err(e) => return Err(AudioError::MpvIpc(e.to_string())),
             }
-        }
+        })
     }
 
     /// Load and play a file/URL (replaces current playlist)

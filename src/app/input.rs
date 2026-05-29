@@ -69,14 +69,21 @@ impl App {
                 return Ok(());
             }
             // Page switching
-            (KeyCode::F(1), _) => {
-                state.page = Page::Browse;
+            (KeyCode::F(n), _) if (1..=7).contains(&n) => {
+                let visible_pages = state.visible_pages();
+                let Some(page) = visible_pages.get(n as usize - 1).copied() else {
+                    return Ok(());
+                };
+
+                state.page = page;
                 let on_starred = state.browse.selected_option == Some(SongOption::Starred);
                 let browse_tab = state.browse.browse_tab.clone();
-                let refresh_songs = on_starred
+                let refresh_songs = page == Page::Browse
+                    && on_starred
                     && browse_tab == BrowseTab::Songs
                     && state.browse.starred_songs_dirty;
-                let refresh_albums = on_starred
+                let refresh_albums = page == Page::Browse
+                    && on_starred
                     && browse_tab == BrowseTab::Albums
                     && state.browse.starred_albums_dirty;
 
@@ -90,34 +97,6 @@ impl App {
                     self.get_starred_albums().await;
                     self.state.write().await.browse.starred_albums_dirty = false;
                 }
-                return Ok(());
-            }
-            (KeyCode::F(2), _) => {
-                state.page = Page::Artists;
-                return Ok(());
-            }
-            (KeyCode::F(3), _) => {
-                state.page = Page::Queue;
-                return Ok(());
-            }
-            (KeyCode::F(4), _) => {
-                state.page = Page::Playlists;
-                return Ok(());
-            }
-            (KeyCode::F(5), _) => {
-                state.page = Page::Radio;
-                return Ok(());
-            }
-            (KeyCode::F(6), _) | (KeyCode::Char('y'), KeyModifiers::NONE) => {
-                state.page = Page::Lyrics;
-                return Ok(());
-            }
-            (KeyCode::F(7), _) => {
-                state.page = Page::Server;
-                return Ok(());
-            }
-            (KeyCode::F(8), _) => {
-                state.page = Page::Settings;
                 return Ok(());
             }
             // Playback controls (global)
@@ -139,6 +118,18 @@ impl App {
                 // Previous track
                 drop(state);
                 return self.prev_track().await;
+            }
+            // Seek backward 5 seconds
+            (KeyCode::Char('H'), KeyModifiers::SHIFT) => {
+                drop(state);
+                let _ = self.mpv.seek_relative(-5.0);
+                return Ok(());
+            }
+            // Seek forward 5 seconds
+            (KeyCode::Char('L'), KeyModifiers::SHIFT) => {
+                drop(state);
+                let _ = self.mpv.seek_relative(5.0);
+                return Ok(());
             }
             // Cycle theme (global)
             (KeyCode::Char('t'), KeyModifiers::NONE) => {
