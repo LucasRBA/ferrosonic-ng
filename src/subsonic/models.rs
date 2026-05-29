@@ -306,6 +306,7 @@ pub struct PingData {}
 /// Lyrics response
 #[derive(Debug, Deserialize)]
 pub struct LyricsData {
+    #[serde(default)]
     pub lyrics: OneOrMany<Lyrics>,
 }
 
@@ -337,6 +338,7 @@ pub struct LyricsList {
 
 #[derive(Debug, Deserialize)]
 pub struct StructuredLyrics {
+    #[serde(default)]
     pub line: Vec<LyricsLine>,
 }
 
@@ -351,6 +353,12 @@ pub struct LyricsLine {
 pub enum OneOrMany<T> {
     One(T),
     Many(Vec<T>),
+}
+
+impl<T> Default for OneOrMany<T> {
+    fn default() -> Self {
+        Self::Many(Vec::new())
+    }
 }
 
 impl<T> OneOrMany<T> {

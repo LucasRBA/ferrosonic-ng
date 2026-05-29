@@ -537,12 +537,11 @@ impl AppState {
         state
     }
 
-
     /// Get the currently playing song from the queue
     pub fn current_song(&self) -> Option<&Child> {
         self.queue_position.and_then(|pos| self.queue.get(pos))
     }
-
+    
     /// Show a notification
     pub fn notify(&mut self, message: impl Into<String>) {
         self.notification = Some(Notification {
