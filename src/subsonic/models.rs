@@ -310,10 +310,8 @@ pub struct LyricsData {
     pub lyrics: OneOrMany<Lyrics>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Lyrics {
-    pub artist: Option<String>,
-    pub title: Option<String>,
     #[serde(alias = "value", alias = "content", alias = "$value")]
     pub content: Option<String>,
 }
@@ -348,7 +346,7 @@ pub struct LyricsLine {
     pub value: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum OneOrMany<T> {
     One(T),
