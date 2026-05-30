@@ -14,7 +14,7 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut R
     
     let block = Block::default()
         .borders(Borders::ALL)
-        .title("Lyrics")
+        .title(" Lyrics ")
         .border_style(Style::default().fg(colors.border_focused));
 
     if state.now_playing.song.is_none() {
