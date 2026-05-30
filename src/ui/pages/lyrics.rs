@@ -7,9 +7,9 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::state::AppState;
+use crate::app::state::{AppState, RenderMutations};
 
-pub fn render(frame: &mut Frame, area: Rect, state: &mut AppState) {
+pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut RenderMutations) {
     let colors = state.settings_state.theme_colors();
     
     let block = Block::default()
@@ -56,14 +56,13 @@ pub fn render(frame: &mut Frame, area: Rect, state: &mut AppState) {
             // Account for spacing (each line takes 1 + spacing actual rows)
             let line_height = 1 + spacing;
             let center_offset = (area.height.saturating_sub(2) / 2) as usize;
-            let target_row = idx * line_height;
-            state.lyrics_state.scroll_offset = target_row.saturating_sub(center_offset) as usize;
+            mutations.lyrics_scroll_offset = Some((idx * line_height).saturating_sub(center_offset));
         }
     } else if state.lyrics_state.is_manual_scroll {
         // Auto-resume after 5 seconds of inactivity if synced
         if let Some(last) = state.lyrics_state.last_scroll_time {
             if last.elapsed() > Duration::from_secs(5) && parsed.is_synced {
-                state.lyrics_state.is_manual_scroll = false;
+                mutations.lyrics_reset_manual_scroll = Some(false);
             }
         }
     }

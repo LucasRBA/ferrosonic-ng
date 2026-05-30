@@ -485,6 +485,8 @@ pub struct RenderMutations {
     pub playlists_song_scroll_offset: Option<usize>,
     pub artists_tree_scroll_offset: Option<usize>,
     pub artists_song_scroll_offset: Option<usize>,
+    pub lyrics_scroll_offset: Option<usize>,
+    pub lyrics_reset_manual_scroll: Option<bool>,
 }
 
 /// Complete application state
