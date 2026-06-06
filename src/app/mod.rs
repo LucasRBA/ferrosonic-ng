@@ -461,6 +461,7 @@ impl App {
                     }
                     AudioAction::SetVolume(vol) => {
                         let _ = self.mpv.set_volume(vol);
+                        self.state.write().await.volume = vol.clamp(0, 100);
                     }
                 }
             }
