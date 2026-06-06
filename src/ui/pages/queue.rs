@@ -8,7 +8,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::state::{AppState, RenderMutations};
+use crate::app::state::{format_duration, AppState, RenderMutations};
 
 /// Render the queue page.
 ///
@@ -17,9 +17,30 @@ use crate::app::state::{AppState, RenderMutations};
 pub fn render(frame: &mut Frame, area: Rect, state: &AppState, mutations: &mut RenderMutations) {
     let colors = *state.settings_state.theme_colors();
 
+    // Sum durations of the current and upcoming tracks (already-played tracks
+    // are excluded) so the title can show how much listening time is left.
+    let start = state.queue_position.unwrap_or(0);
+    let remaining_secs: i64 = state
+        .queue
+        .iter()
+        .skip(start)
+        .filter_map(|song| song.duration)
+        .map(i64::from)
+        .sum();
+
+    let title = if remaining_secs > 0 {
+        format!(
+            " Queue ({}) [{} left] ",
+            state.queue.len(),
+            format_duration(remaining_secs as f64)
+        )
+    } else {
+        format!(" Queue ({}) ", state.queue.len())
+    };
+
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(format!(" Queue ({}) ", state.queue.len()))
+        .title(title)
         .border_style(Style::default().fg(colors.border_focused));
 
     if state.queue.is_empty() {

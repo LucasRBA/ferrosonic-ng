@@ -1,3 +1,4 @@
+use crate::app::state::format_duration;
 use crate::subsonic::models::{Album, Child};
 use crate::ui::theme::ThemeColors;
 
@@ -112,11 +113,18 @@ pub fn get_album_line<'a>(
         (false, false) => format!(" - {} {}", artist, year_str),
     };
 
+    let duration_text = album
+        .duration
+        .filter(|&d| d > 0)
+        .map(|d| format!(" [{}]", format_duration(d as f64)))
+        .unwrap_or_default();
+
     Line::from(vec![
         Span::styled(indicator, Style::default().fg(colors.playing)),
         Span::styled(star_indicator, Style::default().fg(colors.playing)),
         Span::styled(album.name.clone(), Style::default().fg(title_color)),
         Span::styled(meta_text, Style::default().fg(meta_color)),
+        Span::styled(duration_text, Style::default().fg(meta_color)),
     ])
 }
 
