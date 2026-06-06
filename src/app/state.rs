@@ -532,6 +532,12 @@ impl AppState {
             config: config.clone(),
             ..Default::default()
         };
+        // Start on the first configured visible tab so hidden default pages
+        // are not selected on launch.
+        state.page = Page::visible_from_config(&config.visible_tabs)
+            .first()
+            .copied()
+            .unwrap_or_default();
         // Initialize server page with current values
         state.server_state.base_url = config.base_url.clone();
         state.server_state.username = config.username.clone();
@@ -595,7 +601,9 @@ impl AppState {
 
 #[cfg(test)]
 mod tests {
-    use super::Page;
+    use crate::config::Config;
+
+    use super::{AppState, Page};
 
     #[test]
     fn visible_pages_use_default_when_not_configured() {
@@ -630,6 +638,29 @@ mod tests {
             Page::visible_from_config(&names),
             vec![Page::Queue, Page::Server]
         );
+    }
+
+    #[test]
+    fn app_state_starts_on_first_visible_tab() {
+        let config = Config {
+            visible_tabs: vec![
+                "Artists".to_string(),
+                "Queue".to_string(),
+                "Server".to_string(),
+            ],
+            ..Default::default()
+        };
+
+        let state = AppState::new(config);
+
+        assert_eq!(state.page, Page::Artists);
+    }
+
+    #[test]
+    fn app_state_uses_default_page_when_visible_tabs_are_empty() {
+        let state = AppState::new(Config::default());
+
+        assert_eq!(state.page, Page::Browse);
     }
 }
 
