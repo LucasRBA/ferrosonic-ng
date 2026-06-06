@@ -477,6 +477,8 @@ pub struct AppState {
     pub queue: Vec<Child>,
     /// Current position in queue
     pub queue_position: Option<usize>,
+    /// Playback volume (0-100), session-persistent across track changes
+    pub volume: i32,
     /// Browse page state
     pub browse: BrowseState,
     /// Artists page state
@@ -553,8 +555,16 @@ impl AppState {
         state.settings_state.save_queue_enabled = config.save_queue;
         // Default to All songs so navigation and rendering start in sync
         state.browse.selected_option = Some(SongOption::All);
+        // mpv starts at full volume; mirror that in state for the UI
+        state.volume = 100;
 
         state
+    }
+
+    /// Adjust the volume by `delta`, clamped to 0-100, returning the new value.
+    pub fn adjust_volume(&mut self, delta: i32) -> i32 {
+        self.volume = (self.volume + delta).clamp(0, 100);
+        self.volume
     }
 
     /// Get the currently playing song from the queue
@@ -661,6 +671,28 @@ mod tests {
         let state = AppState::new(Config::default());
 
         assert_eq!(state.page, Page::Browse);
+    }
+
+    #[test]
+    fn app_state_starts_at_full_volume() {
+        let state = AppState::new(Config::default());
+        assert_eq!(state.volume, 100);
+    }
+
+    #[test]
+    fn adjust_volume_clamps_to_0_100() {
+        let mut state = AppState::new(Config::default());
+
+        assert_eq!(state.adjust_volume(-5), 95);
+        assert_eq!(state.adjust_volume(10), 100); // clamps at the top
+        assert_eq!(state.adjust_volume(5), 100); // stays clamped
+
+        // Drive it down past zero and confirm the floor.
+        for _ in 0..25 {
+            state.adjust_volume(-5);
+        }
+        assert_eq!(state.volume, 0);
+        assert_eq!(state.adjust_volume(-5), 0);
     }
 }
 
