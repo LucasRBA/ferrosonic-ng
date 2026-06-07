@@ -573,8 +573,9 @@ impl AppState {
         // Initialize save and restore queue from config
         state.settings_state.save_queue_enabled = config.save_queue;
         // Default to All songs so navigation and rendering start in sync
-        state.browse.selected_option = Some(crate::app::models::SongOption::All);
-
+        state.browse.selected_option = Some(SongOption::All);
+        // mpv starts at full volume; mirror that in state for the UI
+        state.volume = 100;
         state.lyrics_state = LyricsState::default();
 
         state
