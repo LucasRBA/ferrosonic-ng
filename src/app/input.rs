@@ -119,6 +119,22 @@ impl App {
                 drop(state);
                 return self.prev_track().await;
             }
+            // Volume up 5% ('+' / '=')
+            (KeyCode::Char('+') | KeyCode::Char('='), _) => {
+                let vol = state.adjust_volume(5);
+                state.notify(format!("Volume: {}%", vol));
+                drop(state);
+                let _ = self.mpv.set_volume(vol);
+                return Ok(());
+            }
+            // Volume down 5% ('-' / '_')
+            (KeyCode::Char('-') | KeyCode::Char('_'), _) => {
+                let vol = state.adjust_volume(-5);
+                state.notify(format!("Volume: {}%", vol));
+                drop(state);
+                let _ = self.mpv.set_volume(vol);
+                return Ok(());
+            }
             // Seek backward 5 seconds
             (KeyCode::Char('H'), KeyModifiers::SHIFT) => {
                 drop(state);

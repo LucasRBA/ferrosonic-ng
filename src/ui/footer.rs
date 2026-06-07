@@ -2,10 +2,10 @@
 
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
+    layout::{Alignment, Constraint, Layout, Rect},
     style::Style,
     text::{Line, Span},
-    widgets::Widget,
+    widgets::{Paragraph, Widget},
 };
 
 use crate::app::state::{Notification, Page};
@@ -15,6 +15,7 @@ use crate::ui::theme::ThemeColors;
 pub struct Footer<'a> {
     page: Page,
     sample_rate: Option<u32>,
+    volume: i32,
     notification: Option<&'a Notification>,
     colors: ThemeColors,
 }
@@ -24,6 +25,7 @@ impl<'a> Footer<'a> {
         Self {
             page,
             sample_rate: None,
+            volume: 100,
             notification: None,
             colors,
         }
@@ -31,6 +33,11 @@ impl<'a> Footer<'a> {
 
     pub fn sample_rate(mut self, rate: Option<u32>) -> Self {
         self.sample_rate = rate;
+        self
+    }
+
+    pub fn volume(mut self, volume: i32) -> Self {
+        self.volume = volume;
         self
     }
 
@@ -45,6 +52,7 @@ impl<'a> Footer<'a> {
             ("p/Space", "Pause"),
             ("h", "Prev"),
             ("l", "Next"),
+            ("+/-", "Vol"),
         ];
 
         match self.page {
@@ -160,7 +168,15 @@ impl Widget for Footer<'_> {
             buf.set_line(chunks[0].x, chunks[0].y, &line, chunks[0].width);
         }
 
-        // Right side: sample rate / status
+        // Right side: volume and sample rate, right-aligned
+        let mut spans = vec![
+            Span::styled("Vol ", Style::default().fg(self.colors.muted)),
+            Span::styled(
+                format!("{}%", self.volume),
+                Style::default().fg(self.colors.accent),
+            ),
+        ];
+
         if let Some(rate) = self.sample_rate {
             let khz = rate as f64 / 1000.0;
             let rate_str = if khz == khz.floor() {
@@ -168,13 +184,18 @@ impl Widget for Footer<'_> {
             } else {
                 format!("{:.1}kHz", khz)
             };
-            let x = chunks[1].x + chunks[1].width.saturating_sub(rate_str.len() as u16);
-            buf.set_string(
-                x,
-                chunks[1].y,
-                &rate_str,
+            spans.push(Span::styled(
+                " │ ",
+                Style::default().fg(self.colors.secondary),
+            ));
+            spans.push(Span::styled(
+                rate_str,
                 Style::default().fg(self.colors.success),
-            );
+            ));
         }
+
+        Paragraph::new(Line::from(spans))
+            .alignment(Alignment::Right)
+            .render(chunks[1], buf);
     }
 }
