@@ -93,8 +93,8 @@ The Radio page lists internet radio stations from servers that support the Subso
 | `Up` / `k` | Move lyrics up |
 | `Down` / `j` | Move lyrics down |
 | `Top` / `g` | Move to first line of the lyrics currently loaded |
-| `Increase line spacing` / `+` | Adds spacing equivalent to one line to the lyrics |
-| `Decrease line spacing` / `-` | Removes spacing equivalent to one line to the lyrics | 
+| `Increase line spacing` / `]` | Adds spacing equivalent to one line to the lyrics |
+| `Decrease line spacing` / `[` | Removes spacing equivalent to one line to the lyrics | 
 | `Page Up` /`Crtl + b`  | Page up in the lyrics tab | 
 | `Page Down` /`Crtl + f`  | Page down in the lyrics tab | 
 | `Auto-scroll` / `a` | Resume auto-scroll |

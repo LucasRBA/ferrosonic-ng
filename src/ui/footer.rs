@@ -109,7 +109,7 @@ impl<'a> Footer<'a> {
                 binds.extend([
                     ("j/k", "Scroll"),
                     ("g", "Top"),
-                    ("+/-", "Spacing"),
+                    ("[/]", "Spacing"),
                     ("Crtl+B","Page Up"),
                     ("Crtl+F","Page Down"),
                     ("a", "Auto-scroll"),

@@ -41,12 +41,12 @@ impl App {
                 state.lyrics_state.is_manual_scroll = false;
                 state.lyrics_state.last_scroll_time = None;
             }
-            (KeyCode::Char('+') | KeyCode::Char('='), _) => {
+            (KeyCode::Char(']'), _) => {
                 if state.lyrics_state.line_spacing < 5 {
                     state.lyrics_state.line_spacing += 1;
                 }
             }
-            (KeyCode::Char('-') | KeyCode::Char('_'), _) => {
+            (KeyCode::Char('['), _) => {
                 if state.lyrics_state.line_spacing > 0 {
                     state.lyrics_state.line_spacing -= 1;
                 }
