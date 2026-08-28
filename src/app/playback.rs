@@ -78,8 +78,10 @@ impl App {
                             drop(state);
                             info!("Gapless advancement to track {}", next_pos);
 
-                            // Update state - keep audio properties since they'll be similar
-                            // for gapless transitions (same album, same format)
+                            // Update state for the advanced track. Audio properties are
+                            // reset so they get re-polled from MPV for the new track,
+                            // keeping the displayed quality and the PipeWire sample rate
+                            // in sync on gapless transitions too.
                             let mut state = self.state.write().await;
                             state.queue_position = Some(next_pos);
                             let song_to_fetch = if let Some(song) = state.queue.get(next_pos).cloned() {
@@ -96,8 +98,10 @@ impl App {
                                 state.lyrics_state.scroll_offset = 0;
                                 state.lyrics_state.is_manual_scroll = false;
                                 state.lyrics_state.last_scroll_time = None;
-                                // Don't reset audio properties - let them update naturally
-                                // This avoids triggering PipeWire rate changes unnecessarily
+                                state.now_playing.sample_rate = None;
+                                state.now_playing.bit_depth = None;
+                                state.now_playing.format = None;
+                                state.now_playing.channels = None;
                                 Some(song)
                             } else {
                                 None

@@ -80,7 +80,8 @@ impl App {
         cmd.stdout(std::process::Stdio::from(slave_stdout))
             .stderr(std::process::Stdio::from(slave_stderr))
             .stdin(std::process::Stdio::from(slave_stdin))
-            .env("TERM", "xterm-256color");
+            .env("TERM", "xterm-256color")
+            .env("PIPEWIRE_PROPS", "node.passive=true");
 
         match cmd.spawn() {
             Ok(mut child) => {
@@ -236,7 +237,8 @@ lower_cutoff_freq = 10
 higher_cutoff_freq = 18000
 
 [input]
-sample_rate = 96000
+method = pipewire
+source = ferrosonic-mpv
 sample_bits = 32
 remix = 1
 

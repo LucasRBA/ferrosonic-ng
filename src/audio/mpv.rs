@@ -86,10 +86,13 @@ impl MpvController {
         info!("Starting MPV with socket: {}", self.socket_path.display());
 
         let child = Command::new("mpv")
+            .env("PIPEWIRE_PROPS", "node.name=ferrosonic-mpv")
             .arg("--idle") // Stay running when nothing playing
             .arg("--no-video") // Audio only
             .arg("--no-terminal") // No MPV UI
-            .arg("--gapless-audio=yes") // Gapless playback between tracks
+            .arg("--gapless-audio=weak") // Permite reabrir o áudio quando a sample rate mudar
+            .arg("--ao=pipewire") // Força a saída direta para o PipeWire
+            .arg("--audio-samplerate=0") // Impede reamostragem interna no mpv
             .arg("--prefetch-playlist=yes") // Pre-buffer next track
             .arg("--cache=yes") // Enable cache for network streams
             .arg("--cache-secs=120") // Cache up to 2 minutes ahead
